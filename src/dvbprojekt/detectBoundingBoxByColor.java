@@ -20,7 +20,7 @@ import java.util.Random;
  *
  * @author tina
  */
-public class detectBoundingBox implements PlugIn {
+public class detectBoundingBoxByColor implements PlugIn {
 
     String path;
     ImagePlus imp;
@@ -202,7 +202,7 @@ public class detectBoundingBox implements PlugIn {
      */
     public static void main(String[] args) {
         // set the plugins.dir property to make the plugin appear in the Plugins menu
-        Class<?> clazz = detectBoundingBox.class;
+        Class<?> clazz = detectBoundingBoxByColor.class;
         String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
         String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
         System.setProperty("plugins.dir", pluginsDir);
