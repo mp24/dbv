@@ -25,17 +25,17 @@ public class detectBoundingBox implements PlugIn {
     String path;
     ImagePlus imp;
     ImagePlus original;
-    
-    
-        int tag = 127;
-        int tagColor = (255 << 24) | (tag << 16) | (tag << 8) | tag;
-        
-            int minBoxHeight = 50;
-        ArrayList<Roi> boundingBoxes = new ArrayList<Roi>();
+
+    int tag = 127;
+    int tagColor = (255 << 24) | (tag << 16) | (tag << 8) | tag;
+
+    int minBoxHeight = 50;
+    ArrayList<Roi> boundingBoxes = new ArrayList<Roi>();
 
     @Override
     public void run(String string) {
-        original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
+        //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
+        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
         //original = IJ.openImage("/home/tina/Desktop/2.jpg");
         imp = new ImagePlus("Bin", original.getProcessor());
         imp.getType();
@@ -76,8 +76,8 @@ public class detectBoundingBox implements PlugIn {
         int found = 0;
 
         //while (markedPXs < ip.getPixelCount()/2) {
-       // while (found <= 2) {
-        while (boundingBoxes.size()<7) {
+        // while (found <= 2) {
+        while (boundingBoxes.size() < 5) {
             Wand wand = new Wand(ip);
             FloodFiller ff = new FloodFiller(ip);
             Random rand = new Random();
@@ -115,55 +115,44 @@ public class detectBoundingBox implements PlugIn {
 //                            + width + "," + height);
 
                     //int minBoxHeight = 50;
-                    double sideRatio = width / height;
-                     double area = r.getStatistics().area;
-                    if (r.getStatistics().area >= minBoxHeight * minBoxHeight && (area <= (original.getProcessor().getWidth() * original.getProcessor().getHeight()) * 0.8)) {
-                        if ((sideRatio >= 0.9) && (sideRatio <= 1.1)) {
+                    if (width > 1 && height > 1) {
+
+                        double sideRatio = width / height;
+                        double area = r.getStatistics().area;
+                        if (r.getStatistics().area >= minBoxHeight * minBoxHeight
+                                && (area <= (original.getProcessor().getWidth() * original.getProcessor().getHeight()) * 0.8)) {
+                            if ((sideRatio >= 0.9) && (sideRatio <= 1.1)) {
 //                            IJ.log("w/h" + width + ";" + height);
 //                            IJ.log("a" + width * height + "");
 //                            ip.fill(r);
 //                            found++;
 
-                        ip.draw(r);
-                        ip.setFont(new Font("SansSerif", Font.PLAIN, minBoxHeight / 3));
-                        ip.drawString(boundingBoxes.size() + "", tLX, tLY);
+                                ip.draw(r);
+                                ip.setFont(new Font("SansSerif", Font.PLAIN, minBoxHeight / 3));
+                                ip.drawString(boundingBoxes.size() + "", tLX, tLY);
 //                        IJ.log("roi" + tLX + "," + tLY + ","
 //                                + width + "," + height + ";");
 //                            boundingBoxes.add(r);
 
+                            } else {
+                                markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
+                            }
                         } else {
-                            markedPXs =markedPXs+excludeRegion(ip, xRand, yRand);
-//                            ip.setColor(tagColor);
-//                            ff.fill(xRand, yRand);
-//                            regionCount++;
-//                            int[] histo = ip.getHistogram();
-//                            markedPXs = histo[tag];
+                            markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
                         }
-                    } else {
-                        markedPXs =markedPXs+excludeRegion(ip, xRand, yRand);
-//                        ip.setColor(tagColor);
-//                        ff.fill(xRand, yRand);
-//                        regionCount++;
-//                        int[] histo = ip.getHistogram();
-//                        markedPXs = histo[tag];
                     }
-                }else {
-                    markedPXs =markedPXs+excludeRegion(ip, xRand, yRand);
-//                    ip.setColor(tagColor);
-//                    ff.fill(xRand, yRand);
-//                     regionCount++;
-//                     int[] histo = ip.getHistogram();
-//                     markedPXs = histo[tag];
-                    
+                } else {
+                    markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
+
                 }
-                   // IJ.log(regionCount + "");
-                    //int[] histo = ip.getHistogram();
-                    //markedPXs = histo[tag];
-                }
+                // IJ.log(regionCount + "");
+                //int[] histo = ip.getHistogram();
+                //markedPXs = histo[tag];
             }
-            //Rectangle r = new Rectangle();
-            return ip;
         }
+        //Rectangle r = new Rectangle();
+        return ip;
+    }
 
     private int excludeRegion(ImageProcessor ip, int x, int y) {
         int[] histo = ip.getHistogram();
@@ -174,7 +163,7 @@ public class detectBoundingBox implements PlugIn {
         ff.fill(x, y);
         pxInRegion = histo[tag] - prevMarked;
         return pxInRegion;
-    }    
+    }
 
     private int getMin(int[] array) {
         int min = array[0];// = Integer.MAX_VALUE;
