@@ -7,13 +7,17 @@ import ij.gui.ImageRoi;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.Wand;
+import ij.plugin.Histogram;
 import ij.plugin.PlugIn;
+import ij.process.ColorProcessor;
 import ij.process.FloodFiller;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -26,147 +30,73 @@ public class detectBoundingBoxByColor implements PlugIn {
     ImagePlus imp;
     ImagePlus original;
 
-    int tag = 127;
-    int tagColor = (255 << 24) | (tag << 16) | (tag << 8) | tag;
-
-    int minBoxHeight = 50;
     ArrayList<Roi> boundingBoxes = new ArrayList<Roi>();
+    int grenzwert = 70;
 
     @Override
     public void run(String string) {
         //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+        //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
         //original = IJ.openImage("/home/tina/Desktop/2.jpg");
-        imp = new ImagePlus("Bin", original.getProcessor());
-        imp.getType();
 
-        ImageConverter ic = new ImageConverter(imp);
-        if (imp.getType() != imp.GRAY8) {
-            ic.convertToGray8();
-        }
+        int[] redVals = new int[original.getProcessor().getPixelCount()];
+        int[] blueVals = new int[original.getProcessor().getPixelCount()];
+        int i = 0;
 
-        IJ.run(imp, "Find Edges", "");
-        IJ.run(imp, "Make Binary", "");
-        //IJ.run(imp, "Invert", "");
-        imp.show();
+//         IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
+        //IJ.run(original, "Subtract Background...", "rolling=50 light separate");
+        IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
+        ColorProcessor ip = new ColorProcessor(original.getImage());
 
-        //   showDialog();
-//       ic.convertToRGB();
-//       imp.draw(Xs[0], 0, 0, 0);
-        ic.convertToRGB();
+        //grenzwert = (int)original.getStatistics().mean - (int)original.getStatistics().stdDev ;
+        Rectangle r = ip.getRoi();
+        for (int y = r.y; y < (r.y + r.height); y++) {
+            for (int x = r.x; x < (r.x + r.width); x++) {
+                Color c = ip.getColor(x, y);
+                ///IJ.log(c+"");
+                int red = c.getRed();
+                int blue = c.getBlue();
+                int green = c.getGreen();
 
-        ImageProcessor ip = getTheBox(imp.getProcessor());
-
-        ImageRoi imageRoi = new ImageRoi(imp.getWidth(), imp.getHeight(), ip);
-        Overlay overlay = new Overlay(imageRoi);
-        imp.setOverlay(overlay);
-        imp.setRoi(imageRoi);
-        imp.show();
-        original.show();
-
-    }
-
-    private ImageProcessor getTheBox(ImageProcessor ip) {
-        //ImageProcessor ip = imp.getProcessor();   
-
-        int target = 0;
-        int targetColor = (255 << 24) | (target << 16) | (target << 8) | target;
-
-        int markedPXs = 0;
-        int regionCount = 0;
-        int found = 0;
-
-        //while (markedPXs < ip.getPixelCount()/2) {
-        // while (found <= 2) {
-        while (boundingBoxes.size() < 5) {
-            Wand wand = new Wand(ip);
-            FloodFiller ff = new FloodFiller(ip);
-            Random rand = new Random();
-            int xRand = rand.nextInt(ip.getWidth()) + 0;//0 - width //2354;//
-            int yRand = rand.nextInt(ip.getHeight()) + 0;//0 - height//1747;//
-            //IJ.log("" + ip.getPixel(xRand, yRand));
-
-            if (ip.getPixel(xRand, yRand) != tagColor) {
-                if (ip.getPixel(xRand, yRand) == targetColor) {
-                    wand.autoOutline(xRand, yRand, 0.0, 4);//, 0.0 ,1);
-                    //IJ.log(Arrays.toString(wand.xpoints));
-                    //IJ.log(Arrays.toString(wand.ypoints));
-
-                    int[] Xs = wand.xpoints;
-                    int[] Ys = wand.ypoints;
-
-                    ip.setColor(Color.magenta);
-
-//                    for (int i = 0; i < Xs.length; i++) {
-//                        //  ip.drawString("("+Xs[i]+","+Ys[i]+")", Xs[i]+10, Ys[i]+fontSize);
-//                        ip.drawDot(Xs[i], Ys[i]);
-//                    }
-                    int tLX = getMin(Xs);
-                    int tLY = getMin(Ys);
-                    //IJ.log(tLX + ";" + tLY);
-
-                    int width = getMax(Xs) - tLX;
-                    int height = getMax(Ys) - tLY;
-
-                    Roi r = new Roi(
-                            tLX, tLY,
-                            width, height
-                    );
-//                    IJ.log("roi" + tLX + "," + tLY + ","
-//                            + width + "," + height);
-
-                    //int minBoxHeight = 50;
-                    if (width > 1 && height > 1) {
-
-                        double sideRatio = width / height;
-                        double area = r.getStatistics().area;
-                        if (r.getStatistics().area >= minBoxHeight * minBoxHeight
-                                && (area <= (original.getProcessor().getWidth() * original.getProcessor().getHeight()) * 0.8)) {
-                            if ((sideRatio >= 0.9) && (sideRatio <= 1.1)) {
-//                            IJ.log("w/h" + width + ";" + height);
-//                            IJ.log("a" + width * height + "");
-//                            ip.fill(r);
-//                            found++;
-
-                                ip.draw(r);
-                                ip.setFont(new Font("SansSerif", Font.PLAIN, minBoxHeight / 3));
-                                ip.drawString(boundingBoxes.size() + "", tLX, tLY);
-//                        IJ.log("roi" + tLX + "," + tLY + ","
-//                                + width + "," + height + ";");
-//                            boundingBoxes.add(r);
-
-                            } else {
-                                markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
-                            }
-                        } else {
-                            markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
-                        }
+                if ((red < blue * 0.99 && red < green * 0.99) || (red > blue * 1.1 && red > green * 1.1)) {
+                    if (red > green && red > blue && red > grenzwert) {
+                        //inspectRegion(x,y,ip);
+                        redVals[i] = ip.get(x, y);
+                        //IJ.log("RED"+ip.get(x, y));
+                        ip.setColor(Color.red);
+                        ip.drawDot(x, y);
                     }
-                } else {
-                    markedPXs = markedPXs + excludeRegion(ip, xRand, yRand);
-
                 }
-                // IJ.log(regionCount + "");
-                //int[] histo = ip.getHistogram();
-                //markedPXs = histo[tag];
+                if ((blue < red * 0.9 && blue < green * 0.9) || (blue > red * 1.1 && blue > green * 1.1)) {
+                    if (blue > red && blue > green && blue > grenzwert) {
+                        //inspectRegion(x,y,ip);
+                        //IJ.log("Blue"+ip.get(x, y));
+                        blueVals[i] = ip.get(x, y);
+                        ip.setColor(Color.blue);
+                        ip.drawDot(x, y);
+
+                    }
+                }
+
+                i++;
             }
         }
-        //Rectangle r = new Rectangle();
-        return ip;
+
+//                            IJ.log(Arrays.toString( redVals));
+//                    IJ.log(Arrays.toString( blueVals));
+        new ImagePlus("Red&Blue", ip).show();
+        original.show();
     }
 
-    private int excludeRegion(ImageProcessor ip, int x, int y) {
-        int[] histo = ip.getHistogram();
-        int prevMarked = histo[tag];
-        int pxInRegion = 0;
-        FloodFiller ff = new FloodFiller(ip);
-        ip.setColor(tagColor);
-        ff.fill(x, y);
-        pxInRegion = histo[tag] - prevMarked;
-        return pxInRegion;
+    private void inspectRegion(int x, int y, ImageProcessor ip) {
+        ip.setColor(Color.magenta);
+        ip.drawDot(x, y);
     }
 
     private int getMin(int[] array) {
+        //int min = -16777215;//array[0];// = Integer.MAX_VALUE;
+        // int min = array[0];// = Integer.MAX_VALUE;
         int min = array[0];// = Integer.MAX_VALUE;
         for (int i = 0; i < array.length; i++) {
             if (array[i] == 0) {
@@ -179,13 +109,13 @@ public class detectBoundingBoxByColor implements PlugIn {
     }
 
     private int getMax(int[] array) {
-        int max = 0;// = Integer.MAX_VALUE;
+        //int max = 0;// = Integer.MAX_VALUE;
+        int max = array[0];// = Integer.MAX_VALUE;
         for (int i = 0; i < array.length; i++) {
             if (array[i] == 0) {
                 i++;
                 //IJ.log(array[i]+" ZERO");
-            }
-            if (array[i] > max) {
+            } else if (array[i] > max) {
                 max = array[i];
             }
         }
