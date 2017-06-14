@@ -3,6 +3,7 @@ package dvbprojekt;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
+import ij.Macro;
 import ij.gui.Roi;
 import ij.gui.Wand;
 import ij.plugin.PlugIn;
@@ -35,15 +36,23 @@ public class detectBoundingBoxByColor implements PlugIn {
 
     @Override
     public void run(String string) {
-        //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-        //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
-        //original = IJ.openImage("/home/tina/Desktop/2.jpg");
+        
+            
+        if (IJ.isMacro() && Macro.getOptions() != null && !Macro.getOptions().trim().isEmpty()) {
+            String args = Macro.getOptions().trim();
+            path = args;
+            original = IJ.openImage(path);
+        } else {
+           //original = IJ.getImage();
+           
+            //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            //original = IJ.openImage("/home/tina/Desktop/2.jpg");
+        }       
 
-        int[] redVals = new int[original.getProcessor().getPixelCount()];
-        int[] blueVals = new int[original.getProcessor().getPixelCount()];
+
         int i = 0;
-
 //         IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
         //IJ.run(original, "Subtract Background...", "rolling=50 light separate");
         IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
@@ -63,9 +72,6 @@ public class detectBoundingBoxByColor implements PlugIn {
 
                 if ((red < blue * 0.99 && red < green * 0.99) || (red > blue * 1.1 && red > green * 1.1)) {
                     if (red > green && red > blue && red > grenzwert) {
-                        //inspectRegion(x,y,ip);
-                        redVals[i] = ip.get(x, y);
-                        //IJ.log("RED"+ip.get(x, y));
                         ip.setColor(Color.red);
                         ip.drawDot(x, y);
                         //inspectRegion(x,y,ip);
@@ -73,16 +79,11 @@ public class detectBoundingBoxByColor implements PlugIn {
                 }
                 if ((blue < red * 0.9 && blue < green * 0.9) || (blue > red * 1.1 && blue > green * 1.1)) {
                     if (blue > red && blue > green && blue > grenzwert) {
-                        //inspectRegion(x,y,ip);
-                        //IJ.log("Blue"+ip.get(x, y));
-                        blueVals[i] = ip.get(x, y);
                         ip.setColor(Color.blue);
                         ip.drawDot(x, y);
                         // inspectRegion(x,y,ip);
-
                     }
                 }
-                //}
                 i++;
             }
         }
@@ -92,19 +93,17 @@ public class detectBoundingBoxByColor implements PlugIn {
                 if (!alreadyInBox(x, y) && ip.getPixel(x, y) != tagColor) {
                     //IJ.log(ip.getColor(x, y)+"");
                     if (ip.getColor(x, y).equals(Color.RED)) {
-                        IJ.log("true red");
+                        //IJ.log("true red");
                         inspectRegion(x, y, ip);
                     }
                     if (ip.getColor(x, y) == Color.BLUE) {
-                        IJ.log("true blue");
+                        //IJ.log("true blue");
                         inspectRegion(x, y, ip);
                     }
                 }
             }
         }
 
-//                            IJ.log(Arrays.toString( redVals));
-//                    IJ.log(Arrays.toString( blueVals));
         new ImagePlus("Red&Blue", ip).show();
         original.show();
     }
@@ -159,8 +158,8 @@ public class detectBoundingBoxByColor implements PlugIn {
                     
                     //find the codebox
                     Roi roi2 = new Roi(
-                            tLX, tLY+height*1.1,
-                            width, height
+                            tLX, tLY+height*1.2,
+                            width*0.8, height
                     );
                     ip.setColor(Color.magenta);
                     ip.draw(roi2);
