@@ -1,6 +1,5 @@
 package dvbprojekt;
 
-
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -19,99 +18,116 @@ import java.util.jar.Pack200;
 import javafx.util.Pair;
 
 public class QR_Plugin implements PlugIn {
-String path;
-   ImagePlus original;
+
+    String path;
+    ImagePlus original;
+    
     int minBoxHeight = 100;
+    int maxBoxHeight = 500;
+    int minBoxWidth = minBoxHeight/2;
+    int maxBoxWidth = maxBoxHeight;
+    
     int scanColDist = 9;
+
     @Override
     public void run(String string) {
-        
-            
+
         if (IJ.isMacro() && Macro.getOptions() != null && !Macro.getOptions().trim().isEmpty()) {
             String args = Macro.getOptions().trim();
             path = args;
             original = IJ.openImage(path);
         } else {
-           //original = IJ.getImage();
-           
+            //original = IJ.getImage();
+
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
             original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/2.jpg");
-        }   
-            IJ.run(original, "Make Binary", "");
-            IJ.run(original, "Invert", "");
-            
-            ImageConverter ic = new ImageConverter(original);
-             ic.convertToRGB();
-            
-            ArrayList<double[]> scans = new ArrayList();
-           int col =0;
-            for (int x = 0; x < (original.getWidth()); x= x+scanColDist) {
-		original.setRoi(new Line(x,0,x,original.getHeight()));
-		ProfilePlot p = new ProfilePlot(original);
-               scans.add(p.getProfile());
+        }
+        IJ.run(original, "Make Binary", "");
+        IJ.run(original, "Invert", "");
 
-                for (int y = 0; y < p.getProfile().length; y++) {
-                    if(scans.get(col)[y]==255){
-                        original.setColor(Color.magenta);
-                        original.getProcessor().drawDot(x, y);
+        ImageConverter ic = new ImageConverter(original);
+        ic.convertToRGB();
+
+        ArrayList<double[]> scans = new ArrayList();
+        HashMap<Integer, ColSegment> map = new HashMap();
+        int col = 0;
+        int noSegments = 0;
+        for (int x = 0; x < (original.getWidth()); x = x + scanColDist) {
+            original.setRoi(new Line(x, 0, x, original.getHeight()));
+            ProfilePlot p = new ProfilePlot(original);
+            double[] curProfile =p.getProfile();
+            scans.add(curProfile);
+
+            //aktuelles Zeilenprofil untersuchen
+            int currSegmentHeight = 0;
+            int startY = -1;
+            for (int y = 0; y < curProfile.length; y++) {
+                if (scans.get(col)[y] == 255) {
+                    original.setColor(Color.magenta);
+                    original.getProcessor().drawDot(x, y);
+                    if (currSegmentHeight == 0) {
+                        startY = y;
+                        noSegments++;
                     }
+                    currSegmentHeight++;
+                } else {
+                    currSegmentHeight = 0;
+//                     original.setColor(Color.green);
+//                    original.getProcessor().drawDot(x, y);
+                }
+                if (currSegmentHeight > minBoxHeight) {
+                    map.put(noSegments, new ColSegment(x, startY, currSegmentHeight));
+                    IJ.log("Column "+col+" Segment:"+noSegments+" höhe"+currSegmentHeight+" startY"+y);
+                   // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
+                   // original.getProcessor().drawString( "" +noSegments, x, y);                   
+                }           
+            }
+            col++;
+            //IJ.log(Arrays.toString(p.getProfile()));
+        }
+        IJ.log(map.toString());
+        
+//        for(Iterator<Map.Entry<String, String>> it = map.entrySet().iterator(); it.hasNext(); ) {
+//            Map.Entry<String, String> entry = it.next();
+//            if(entry.getKey().equals("test")) {
+//              it.remove();
+//        }
+
+        //key = segmentNumber
+        for(Map.Entry<Integer, ColSegment> segA : map.entrySet()){
+            for(Map.Entry<Integer, ColSegment> segB : map.entrySet()){
+//        for (int segA = 1; segA <= map.size(); segA++) {
+//            for (int segB = 1; segB <= map.size(); segB++) {
+//                if(map.get(segA).xstart != map.get(segB).xstart){ //UNgleiche Zeile?
+//                    IJ.log(map.get(segA).compareTo(map.get(segB)) + "");
+//                    if (map.get(segA).compareTo(map.get(segB)) == 0) {
+//                        original.setColor(Color.green);
+//                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
+//                        original.getProcessor().drawString(segA + "," + segB, map.get(segA).xstart, map.get(segA).ystart);
+//                    }
+//                }
+                ColSegment a = segA.getValue();
+                ColSegment b = segB.getValue();
+                if(segA.getKey()!=segB.getKey() && a.xstart != b.xstart ){ //Ungleiches Segment && UNgleiche Spalte?
+                    if(b.ystart >= a.ystart+minBoxWidth && b.ystart <= a.ystart+minBoxWidth){ //horizontale min & max distance?
+                        original.setColor(Color.green);
+                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
+                        original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), a.xstart, b.ystart);
+                    }
+                       
                     
                 }
-                col++;
-                //IJ.log(Arrays.toString(p.getProfile()));
-	}
-            
-            
-            
-           //HashMap<Pair<Integer,Integer>,Integer> map = new HashMap();
-           HashMap<Integer,ColSegment> map = new HashMap();
-            int minSize=0;
-            int maxSize=0;
-            //for(double[] d : scans){
-            for(int c=0; c<scans.size(); c++){
-                int noSegments=0;
-                int currSegmentHeight=0;
-                int startX=-1;
-                for(int i =0; i<scans.get(c).length;i++){                   
-                    if(scans.get(c)[i]==255){
-                        if(currSegmentHeight==0){
-                            startX=i;
-                            noSegments++;
-                        }
-                        currSegmentHeight++;
-                    }else{
-                        currSegmentHeight=0;
-                    }
-                    
-                    if(currSegmentHeight>minBoxHeight){
-                        //map.put(new Pair(startX, (c*scanColDist)), currSegmentHeight);
-                        map.put(noSegments,new ColSegment(startX, (c*scanColDist), currSegmentHeight));
-                        //IJ.log("Line "+c+" Segment:"+noSegments+" höhe"+currSegmentHeight+" startX"+startX);
-                    }
-                    
-                }
+                                                         
             }
-            IJ.log(map.toString());
-            
-            
-            for(int m=1; m<=map.size();m++){
-                for(int n=2; n<=map.size();n++){
-                    IJ.log(map.get(m).compareTo(map.get(n))+"");   
-                    if(map.get(m).compareTo(map.get(n))==0){
-                          original.getProcessor().setFont(new Font("SansSerif",Font.PLAIN,20));
-                        original.getProcessor().drawString(m+","+n, map.get(m).xstart, map.get(m).ystart);
-                    }
-                }          
-            }
-            
-            
-           // for(double[])
-            original.show();
+        }
+
+        // for(double[])
+        original.show();
     }
-    
-        /**
+
+    /**
      * Main method for debugging.
      *
      * For debugging, it is convenient to have a method that starts ImageJ,
