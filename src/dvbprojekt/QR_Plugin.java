@@ -51,7 +51,7 @@ public class QR_Plugin implements PlugIn {
         ic.convertToRGB();
 
         ArrayList<double[]> scans = new ArrayList();
-        HashMap<Integer, ColSegment> map = new HashMap();
+        HashMap<Integer, Line> map = new HashMap();
         int col = 0;
         int noSegments = 0;
         for (int x = 0; x < (original.getWidth()); x = x + scanColDist) {
@@ -65,8 +65,8 @@ public class QR_Plugin implements PlugIn {
             int startY = -1;
             for (int y = 0; y < curProfile.length; y++) {
                 if (scans.get(col)[y] == 255) {
-                    original.setColor(Color.magenta);
-                    original.getProcessor().drawDot(x, y);
+//                    original.setColor(Color.magenta);
+//                    original.getProcessor().drawDot(x, y);
                     if (currSegmentHeight == 0) {
                         startY = y;
                         noSegments++;
@@ -78,10 +78,10 @@ public class QR_Plugin implements PlugIn {
 //                    original.getProcessor().drawDot(x, y);
                 }
                 if (currSegmentHeight > minBoxHeight) {
-                    map.put(noSegments, new ColSegment(x, startY, currSegmentHeight));
-                    IJ.log("Column "+col+" Segment:"+noSegments+" höhe"+currSegmentHeight+" startY"+y);
-                   // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
-                   // original.getProcessor().drawString( "" +noSegments, x, y);                   
+                    map.put(noSegments, new Line(x, startY, x, startY+currSegmentHeight));
+                    //IJ.log("Column "+col+" Segment:"+noSegments+" höhe"+currSegmentHeight+" startY"+y);
+                    original.setColor(Color.magenta);
+                    original.getProcessor().drawLine(x, startY, x, startY+currSegmentHeight);                 
                 }           
             }
             col++;
@@ -96,8 +96,8 @@ public class QR_Plugin implements PlugIn {
 //        }
 
         //key = segmentNumber
-        for(Map.Entry<Integer, ColSegment> segA : map.entrySet()){
-            for(Map.Entry<Integer, ColSegment> segB : map.entrySet()){
+        for(Map.Entry<Integer, Line> segA : map.entrySet()){
+            for(Map.Entry<Integer, Line> segB : map.entrySet()){
 //        for (int segA = 1; segA <= map.size(); segA++) {
 //            for (int segB = 1; segB <= map.size(); segB++) {
 //                if(map.get(segA).xstart != map.get(segB).xstart){ //UNgleiche Zeile?
@@ -108,13 +108,15 @@ public class QR_Plugin implements PlugIn {
 //                        original.getProcessor().drawString(segA + "," + segB, map.get(segA).xstart, map.get(segA).ystart);
 //                    }
 //                }
-                ColSegment a = segA.getValue();
-                ColSegment b = segB.getValue();
-                if(segA.getKey()!=segB.getKey() && a.xstart != b.xstart ){ //Ungleiches Segment && UNgleiche Spalte?
-                    if(b.ystart >= a.ystart+minBoxWidth && b.ystart <= a.ystart+minBoxWidth){ //horizontale min & max distance?
+                Line a = segA.getValue();
+                Line b = segB.getValue();
+                if(segA.getKey()!=segB.getKey() && a.x1 != b.x1 ){ //Ungleiches Segment && UNgleiche Spalte?
+                    if(b.y1 >= a.y1+minBoxWidth && b.y1 <= a.y1+minBoxWidth){ //horizontale min & max distance?
                         original.setColor(Color.green);
                         original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
-                        original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), a.xstart, b.ystart);
+                        original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), a.x1, b.y1);
+                        original.getProcessor().drawLine(a.x1, a.x2, a.y1, a.y2);
+                        original.getProcessor().drawLine(b.x1, b.x2, b.y1, b.y2);
                     }
                        
                     
