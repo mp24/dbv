@@ -1,5 +1,5 @@
 macro "QRZeichen" {
         // pass command-line arguments to plugin
         //plugin= Menutitle , NOT classname
-        run("detectBoundingBoxByColor",getArgument);
+        run("QR Plugin",getArgument);
 }
