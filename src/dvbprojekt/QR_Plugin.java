@@ -4,27 +4,23 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
+import ij.gui.ImageRoi;
 import ij.gui.Line;
 import ij.gui.ProfilePlot;
-import ij.gui.Roi;
 import ij.plugin.PlugIn;
-import ij.process.ImageConverter;
 import java.awt.Color;
-import java.awt.Font;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.jar.Pack200;
-import javafx.util.Pair;
 
 public class QR_Plugin implements PlugIn {
 
     String path;
     ImagePlus original;
+    ImageRoi overlay;
 
     int minBoxHeight = 70;
     int maxBoxHeight = 350;// 500;
@@ -35,6 +31,7 @@ public class QR_Plugin implements PlugIn {
     int scanColDist = 7;
 
     ArrayList<Rectangle> boundingBoxes = new ArrayList<Rectangle>();
+    ArrayList<Polygon> polygons = new ArrayList<Polygon>();
 
     @Override
     public void run(String string) {
@@ -47,8 +44,8 @@ public class QR_Plugin implements PlugIn {
             //original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
         }
 
@@ -100,18 +97,86 @@ public class QR_Plugin implements PlugIn {
         }
         IJ.log(segmentMap.toString());
         //IJ.log(Arrays.toString(columnsXvals));
-        int preavCol = 0;
 
         for (Iterator<Map.Entry<Integer, Line>> it = segmentMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<Integer, Line> entry = it.next();
             Line lineSeg = entry.getValue();
-            preavCol = lineSeg.x1;
-            //IJ.log(entry.getKey() + "");
-            if (lineSeg.y2 > (lineSeg.y1) + maxBoxHeight) { //entferne zu hohe linien  
-//                original.setColor(Color.gray);
-//                original.getProcessor().draw(lineSeg);
+            boolean overMaxHeight = lineSeg.y2 > (lineSeg.y1) + maxBoxHeight;
+            if (overMaxHeight) { //entferne zu hohe linien  
+                original.setColor(Color.darkGray);
+                original.getProcessor().draw(lineSeg);
                 it.remove();
+            } else {
+                //preavCol = lineSeg.x1;
+                original.setColor(Color.yellow);
+                original.getProcessor().draw(lineSeg);
+
+                boolean leftEdge = false;
+                Line leftVline = new Line(lineSeg.x1 + scanColDist, lineSeg.y1 + scanColDist, lineSeg.x2 + scanColDist, lineSeg.y2 - scanColDist);
+                bin.setRoi(leftVline);
+                ProfilePlot leftP = new ProfilePlot(bin);
+                double[] leftProfile = leftP.getProfile();
+                original.setColor(Color.red);
+                original.getProcessor().draw(leftVline);
+                for (int b = 0; b < leftProfile.length; b++) {
+                    if (b > leftProfile.length * 0.1 && b < leftProfile.length * 0.9) {
+                        if (leftProfile[b] == 0) {
+                            original.setColor(Color.magenta);
+                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
+                            leftEdge = true;
+                        } else {
+                            leftEdge = false;
+                            original.setColor(Color.gray);
+                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
+                        }
+                    }
+                }
+
+                boolean rightEdge = false;
+                Line rightVline = new Line(lineSeg.x1 - scanColDist, lineSeg.y1 + scanColDist, lineSeg.x2 - scanColDist, lineSeg.y2 - scanColDist);
+                bin.setRoi(rightVline);
+                ProfilePlot rightP = new ProfilePlot(bin);
+                double[] rightProfile = rightP.getProfile();
+                original.setColor(Color.green);
+                original.getProcessor().draw(rightVline);
+                for (int b = 0; b < rightProfile.length; b++) {
+                    if (b > rightProfile.length * 0.1 && b < rightProfile.length * 0.9) {
+                        if (rightProfile[b] == 0) {
+                            rightEdge = true;
+                            //IJ.log(rightProfile[b] + "");
+                            original.setColor(Color.cyan);
+                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
+
+                        } else {
+                            rightEdge = false;
+                            original.setColor(Color.gray);
+                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
+                        }
+                    }
+                }
             }
+            //IJ.log(entry.getKey() + "");
+            //  if (lineSeg.y2 > (lineSeg.y1) + maxBoxHeight) { //entferne zu hohe linien  
+//            if (overMaxHeight) { //entferne zu hohe linien  
+//                original.setColor(Color.darkGray);
+//                original.getProcessor().draw(lineSeg);
+//                it.remove();
+//            } 
+//            else if (rightEdge == true) {
+//                if (leftEdge == true) {
+//                    original.setColor(Color.gray);
+//                    original.getProcessor().draw(lineSeg);
+//                    it.remove();
+//
+//                }
+//            } else if (leftEdge == true) {
+//                if (rightEdge == true) {
+//                    original.setColor(Color.gray);
+//                    original.getProcessor().draw(lineSeg);
+//                    it.remove();
+//                }
+//            }
+
         }
 
         IJ.log(segmentMap.toString());
@@ -170,47 +235,11 @@ public class QR_Plugin implements PlugIn {
 
                         if (topConnected && bottomConnected) {//&& !alreadyInBox(lA, lB)) {
 
-                            int scanlineVOffset = (int) (scanColDist * 1.8);
+                            original.setColor(Color.cyan);
+//
+                            boundingBoxes.add(new Rectangle((int) lA.x1, (int) lA.y1, (int) topHline.getLength(), (int) lA.getLength()));
 
-                            boolean blackLeft = false;
-                            Line leftVline = new Line(lA.x1 + scanlineVOffset, lA.y1 + scanlineVOffset, lA.x2 + scanlineVOffset, lA.y2 - scanlineVOffset);
-                            bin.setRoi(leftVline);
-
-                            ProfilePlot leftP = new ProfilePlot(bin);
-                            double[] leftProfile = leftP.getProfile();
-                            for (int b = 0; b < leftProfile.length; b++) {
-                                //if () {
-                                    if (leftProfile[b] == 0) {
-                                        original.setColor(Color.red);
-                                        original.getProcessor().draw(leftVline);
-                                        blackLeft = true;
-                                    } else {
-                                        blackLeft = false;
-                                    }
-
-                               // }
-
-                            }
-
-                            boolean blackRight = false;
-                            Line rightVline = new Line(lB.x1 - scanlineVOffset, lB.y1 + scanlineVOffset, lB.x2 - scanlineVOffset, lB.y2 - scanlineVOffset);
-                            bin.setRoi(rightVline);
-
-                            ProfilePlot rightP = new ProfilePlot(bin);
-                            double[] rightProfile = rightP.getProfile();
-                            for (int b = 0; b < rightProfile.length; b++) {
-                                if (rightProfile[b] == 0) {
-                                    blackRight = true;
-                                    original.setColor(Color.green);
-                                    original.getProcessor().draw(rightVline);
-                                } else {
-                                    blackRight = false;
-                                }
-                            }
-                            if (blackLeft && blackRight) {
-                                boundingBoxes.add(new Rectangle((int) lA.x1, (int) lA.y1, (int) topHline.getLength(), (int) lA.getLength()));
-                            }
-//                                original.setColor(Color.green);
+//                                original.setColor(Color.magenta);
 //                                // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
 //                                // original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), lA.x1, lB.y1);
 //
@@ -222,7 +251,7 @@ public class QR_Plugin implements PlugIn {
 //
 //                                original.setColor(Color.blue);
 //                                original.getProcessor().draw(bottomHline);
-
+                            // }
                         }
 
                     }
@@ -231,31 +260,13 @@ public class QR_Plugin implements PlugIn {
             }
         }
 
-//         List<Rectangle> deleteCandidates = new ArrayList<>();
-//        for(Rectangle r1 :boundingBoxes){
-//           for(Rectangle r2 :boundingBoxes){
-//               if(!r1.equals(r2)){
-//                   if(r1.contains(r2)){
-//                      // boundingBoxes.remove(r2);
-//                       deleteCandidates.add(r2);
-//                   }else if(r2.contains(r1)){
-//                       //boundingBoxes.remove(r1);
-//                        deleteCandidates.add(r1);
-//                   }
-//                   
-//               }
-//            } 
-//        }
-//        for (Rectangle deleteCandidate : deleteCandidates) {
-//            boundingBoxes.remove(deleteCandidate);
-//         }
         for (Rectangle r1 : boundingBoxes) {
-            original.setColor(Color.magenta);
-            original.getProcessor().draw(new Roi(r1));
+//            original.setColor(Color.yellow);
+//            original.getProcessor().draw(new Roi(r1));
         }
 
-        original.show();
         bin.show();
+        original.show();
     }
 
 //    private boolean conectedH(int x1, int y1, int x2, int y2){
