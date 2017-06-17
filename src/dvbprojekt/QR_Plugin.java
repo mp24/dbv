@@ -7,6 +7,7 @@ import ij.Macro;
 import ij.gui.ImageRoi;
 import ij.gui.Line;
 import ij.gui.ProfilePlot;
+import ij.gui.Roi;
 import ij.plugin.PlugIn;
 import java.awt.Color;
 import java.awt.Polygon;
@@ -44,8 +45,8 @@ public class QR_Plugin implements PlugIn {
             //original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
         }
 
@@ -101,6 +102,8 @@ public class QR_Plugin implements PlugIn {
         for (Iterator<Map.Entry<Integer, Line>> it = segmentMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<Integer, Line> entry = it.next();
             Line lineSeg = entry.getValue();
+            //IJ.log(entry.getKey() + "");
+            
             boolean overMaxHeight = lineSeg.y2 > (lineSeg.y1) + maxBoxHeight;
             if (overMaxHeight) { //entferne zu hohe linien  
                 original.setColor(Color.darkGray);
@@ -108,26 +111,26 @@ public class QR_Plugin implements PlugIn {
                 it.remove();
             } else {
                 //preavCol = lineSeg.x1;
-                original.setColor(Color.yellow);
-                original.getProcessor().draw(lineSeg);
+//                original.setColor(Color.yellow);
+//                original.getProcessor().draw(lineSeg);
 
                 boolean leftEdge = false;
                 Line leftVline = new Line(lineSeg.x1 + scanColDist, lineSeg.y1 + scanColDist, lineSeg.x2 + scanColDist, lineSeg.y2 - scanColDist);
                 bin.setRoi(leftVline);
                 ProfilePlot leftP = new ProfilePlot(bin);
                 double[] leftProfile = leftP.getProfile();
-                original.setColor(Color.red);
-                original.getProcessor().draw(leftVline);
+//                original.setColor(Color.red);
+//                original.getProcessor().draw(leftVline);
                 for (int b = 0; b < leftProfile.length; b++) {
                     if (b > leftProfile.length * 0.1 && b < leftProfile.length * 0.9) {
                         if (leftProfile[b] == 0) {
-                            original.setColor(Color.magenta);
-                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
+//                            original.setColor(Color.magenta);
+//                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
                             leftEdge = true;
                         } else {
                             leftEdge = false;
-                            original.setColor(Color.gray);
-                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
+//                            original.setColor(Color.lightGray);
+//                            original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
                         }
                     }
                 }
@@ -137,45 +140,38 @@ public class QR_Plugin implements PlugIn {
                 bin.setRoi(rightVline);
                 ProfilePlot rightP = new ProfilePlot(bin);
                 double[] rightProfile = rightP.getProfile();
-                original.setColor(Color.green);
-                original.getProcessor().draw(rightVline);
+//                original.setColor(Color.green);
+//                original.getProcessor().draw(rightVline);
                 for (int b = 0; b < rightProfile.length; b++) {
                     if (b > rightProfile.length * 0.1 && b < rightProfile.length * 0.9) {
                         if (rightProfile[b] == 0) {
                             rightEdge = true;
                             //IJ.log(rightProfile[b] + "");
-                            original.setColor(Color.cyan);
-                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
+//                            original.setColor(Color.cyan);
+//                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
 
                         } else {
                             rightEdge = false;
-                            original.setColor(Color.gray);
-                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
+//                            original.setColor(Color.lightGray);
+//                            original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
                         }
                     }
                 }
+                
+                if(!leftEdge){
+                    if(!rightEdge){
+                        original.setColor(Color.gray);
+                        original.getProcessor().draw(lineSeg);
+                        it.remove();
+                    }
+                }else{
+                    if(rightEdge){
+                        original.setColor(Color.gray);
+                        original.getProcessor().draw(lineSeg);
+                        it.remove();
+                    }
+                }
             }
-            //IJ.log(entry.getKey() + "");
-            //  if (lineSeg.y2 > (lineSeg.y1) + maxBoxHeight) { //entferne zu hohe linien  
-//            if (overMaxHeight) { //entferne zu hohe linien  
-//                original.setColor(Color.darkGray);
-//                original.getProcessor().draw(lineSeg);
-//                it.remove();
-//            } 
-//            else if (rightEdge == true) {
-//                if (leftEdge == true) {
-//                    original.setColor(Color.gray);
-//                    original.getProcessor().draw(lineSeg);
-//                    it.remove();
-//
-//                }
-//            } else if (leftEdge == true) {
-//                if (rightEdge == true) {
-//                    original.setColor(Color.gray);
-//                    original.getProcessor().draw(lineSeg);
-//                    it.remove();
-//                }
-//            }
 
         }
 
@@ -198,8 +194,7 @@ public class QR_Plugin implements PlugIn {
                         bin.setRoi(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
                         if (topHline.getLength() <= lA.getLength()
                                 && topHline.getAngle() > (-maxAngle) && topHline.getAngle() < maxAngle) {
-                            ProfilePlot topP = new ProfilePlot(bin);
-                            double[] topProfile = topP.getProfile();
+                            double[] topProfile = new ProfilePlot(bin).getProfile();
                             //IJ.log(Arrays.toString(topProfile));
                             for (int t = 0; t < topProfile.length; t++) {
                                 if (topProfile[t] == 255) {
@@ -218,8 +213,7 @@ public class QR_Plugin implements PlugIn {
                         bin.setRoi(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
                         if (bottomHline.getLength() <= lA.getLength()
                                 && bottomHline.getAngle() > (-maxAngle) && bottomHline.getAngle() < maxAngle) {
-                            ProfilePlot bottomP = new ProfilePlot(bin);
-                            double[] bottomProfile = bottomP.getProfile();
+                            double[] bottomProfile = new ProfilePlot(bin).getProfile();
 
                             for (int b = 0; b < bottomProfile.length; b++) {
                                 if (bottomProfile[b] == 255) {
@@ -239,18 +233,18 @@ public class QR_Plugin implements PlugIn {
 //
                             boundingBoxes.add(new Rectangle((int) lA.x1, (int) lA.y1, (int) topHline.getLength(), (int) lA.getLength()));
 
-//                                original.setColor(Color.magenta);
-//                                // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
-//                                // original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), lA.x1, lB.y1);
+                                original.setColor(Color.magenta);
+                                // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
+                                // original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), lA.x1, lB.y1);
+
+                                original.getProcessor().draw(lA);
+                                original.getProcessor().draw(lB);
 //
-//                                original.getProcessor().draw(lA);
-//                                original.getProcessor().draw(lB);
-////
-//                                original.setColor(Color.red);
-//                                original.getProcessor().draw(topHline);
-//
-//                                original.setColor(Color.blue);
-//                                original.getProcessor().draw(bottomHline);
+                                original.setColor(Color.red);
+                                original.getProcessor().draw(topHline);
+
+                                original.setColor(Color.blue);
+                                original.getProcessor().draw(bottomHline);
                             // }
                         }
 
@@ -261,8 +255,8 @@ public class QR_Plugin implements PlugIn {
         }
 
         for (Rectangle r1 : boundingBoxes) {
-//            original.setColor(Color.yellow);
-//            original.getProcessor().draw(new Roi(r1));
+            original.setColor(Color.yellow);
+            original.getProcessor().draw(new Roi(r1));
         }
 
         bin.show();
