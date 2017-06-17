@@ -10,6 +10,7 @@ import ij.gui.ProfilePlot;
 import ij.gui.Roi;
 import ij.plugin.PlugIn;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -45,8 +46,8 @@ public class QR_Plugin implements PlugIn {
             //original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+   //         original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+     original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
         }
 
@@ -98,12 +99,12 @@ public class QR_Plugin implements PlugIn {
         }
         IJ.log(segmentMap.toString());
         //IJ.log(Arrays.toString(columnsXvals));
-
+        int scanlineVOffset = scanColDist + 1;//(int) (scanColDist * 1.8);
         for (Iterator<Map.Entry<Integer, Line>> it = segmentMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<Integer, Line> entry = it.next();
             Line lineSeg = entry.getValue();
             //IJ.log(entry.getKey() + "");
-            
+
             boolean overMaxHeight = lineSeg.y2 > (lineSeg.y1) + maxBoxHeight;
             if (overMaxHeight) { //entferne zu hohe linien  
                 original.setColor(Color.darkGray);
@@ -115,10 +116,9 @@ public class QR_Plugin implements PlugIn {
 //                original.getProcessor().draw(lineSeg);
 
                 boolean leftEdge = false;
-                Line leftVline = new Line(lineSeg.x1 + scanColDist, lineSeg.y1 + scanColDist, lineSeg.x2 + scanColDist, lineSeg.y2 - scanColDist);
+                Line leftVline = new Line(lineSeg.x1 + scanlineVOffset, lineSeg.y1 + scanlineVOffset, lineSeg.x2 + scanlineVOffset, lineSeg.y2 - scanlineVOffset);
                 bin.setRoi(leftVline);
-                ProfilePlot leftP = new ProfilePlot(bin);
-                double[] leftProfile = leftP.getProfile();
+                double[] leftProfile = new ProfilePlot(bin).getProfile();
 //                original.setColor(Color.red);
 //                original.getProcessor().draw(leftVline);
                 for (int b = 0; b < leftProfile.length; b++) {
@@ -136,10 +136,9 @@ public class QR_Plugin implements PlugIn {
                 }
 
                 boolean rightEdge = false;
-                Line rightVline = new Line(lineSeg.x1 - scanColDist, lineSeg.y1 + scanColDist, lineSeg.x2 - scanColDist, lineSeg.y2 - scanColDist);
+                Line rightVline = new Line(lineSeg.x1 - scanlineVOffset, lineSeg.y1 + scanlineVOffset, lineSeg.x2 - scanlineVOffset, lineSeg.y2 - scanlineVOffset);
                 bin.setRoi(rightVline);
-                ProfilePlot rightP = new ProfilePlot(bin);
-                double[] rightProfile = rightP.getProfile();
+                double[] rightProfile = new ProfilePlot(bin).getProfile();
 //                original.setColor(Color.green);
 //                original.getProcessor().draw(rightVline);
                 for (int b = 0; b < rightProfile.length; b++) {
@@ -157,19 +156,17 @@ public class QR_Plugin implements PlugIn {
                         }
                     }
                 }
-                
-                if(!leftEdge){
-                    if(!rightEdge){
+
+                if (!leftEdge) {
+                    if (!rightEdge) {
                         original.setColor(Color.gray);
                         original.getProcessor().draw(lineSeg);
                         it.remove();
                     }
-                }else{
-                    if(rightEdge){
-                        original.setColor(Color.gray);
-                        original.getProcessor().draw(lineSeg);
-                        it.remove();
-                    }
+                } else if (rightEdge) {
+                    original.setColor(Color.gray);
+                    original.getProcessor().draw(lineSeg);
+                    it.remove();
                 }
             }
 
@@ -192,8 +189,7 @@ public class QR_Plugin implements PlugIn {
                         boolean topConnected = false;
                         Line topHline = new Line(lA.x1, lA.y1, lB.x1, lB.y1);
                         bin.setRoi(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
-                        if (topHline.getLength() <= lA.getLength()
-                                && topHline.getAngle() > (-maxAngle) && topHline.getAngle() < maxAngle) {
+                        if (topHline.getLength() <= lA.getLength()) {// && topHline.getAngle() > (-maxAngle) && topHline.getAngle() < maxAngle) {
                             double[] topProfile = new ProfilePlot(bin).getProfile();
                             //IJ.log(Arrays.toString(topProfile));
                             for (int t = 0; t < topProfile.length; t++) {
@@ -211,8 +207,7 @@ public class QR_Plugin implements PlugIn {
                         boolean bottomConnected = false;
                         Line bottomHline = new Line(lA.x2, lA.y2, lB.x2, lB.y2);
                         bin.setRoi(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
-                        if (bottomHline.getLength() <= lA.getLength()
-                                && bottomHline.getAngle() > (-maxAngle) && bottomHline.getAngle() < maxAngle) {
+                        if (bottomHline.getLength() <= lA.getLength()) {//  && bottomHline.getAngle() > (-maxAngle) && bottomHline.getAngle() < maxAngle) {
                             double[] bottomProfile = new ProfilePlot(bin).getProfile();
 
                             for (int b = 0; b < bottomProfile.length; b++) {
@@ -227,25 +222,33 @@ public class QR_Plugin implements PlugIn {
                             // IJ.log(bottomHline.getAngle()+"");
                         }
 
-                        if (topConnected && bottomConnected) {//&& !alreadyInBox(lA, lB)) {
+                        if (topConnected && bottomConnected) {
+                            double angleTop = topHline.getAngle();
+                            double angleBottom = bottomHline.getAngle();
+                            if ( angleBottom > (-maxAngle) && angleBottom < maxAngle) {
+                                if (angleTop > (-maxAngle) && angleTop < maxAngle) {
+                                    IJ.log(angleTop+" , "+angleBottom);
+                                    //Winkel und/oder Länge von Horizontalen grenzen damit entzerrt quadratisch?
+                                    //if (Math.abs(angleTop) <= Math.abs(angleBottom) * 1.2 && Math.abs(angleTop) >= Math.abs(angleBottom) * 0.8) {
+                                        original.setColor(Color.cyan);
+////
+                                        boundingBoxes.add(new Rectangle((int) lA.x1, (int) lA.y1, (int) topHline.getLength(), (int) lA.getLength()));
 
-                            original.setColor(Color.cyan);
+                                        original.setColor(Color.magenta);
+                                         original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 10));
+                                         original.getProcessor().drawString(angleTop+" , "+angleBottom, lA.x1, lB.y1);
+
+                                        original.getProcessor().draw(lA);
+                                        original.getProcessor().draw(lB);
 //
-                            boundingBoxes.add(new Rectangle((int) lA.x1, (int) lA.y1, (int) topHline.getLength(), (int) lA.getLength()));
+                                        original.setColor(Color.red);
+                                        original.getProcessor().draw(topHline);
 
-                                original.setColor(Color.magenta);
-                                // original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 20));
-                                // original.getProcessor().drawString(segA.getKey() + "," + segB.getKey(), lA.x1, lB.y1);
-
-                                original.getProcessor().draw(lA);
-                                original.getProcessor().draw(lB);
-//
-                                original.setColor(Color.red);
-                                original.getProcessor().draw(topHline);
-
-                                original.setColor(Color.blue);
-                                original.getProcessor().draw(bottomHline);
-                            // }
+                                        original.setColor(Color.blue);
+                                        original.getProcessor().draw(bottomHline);
+                                //    }
+                                }
+                            }
                         }
 
                     }
