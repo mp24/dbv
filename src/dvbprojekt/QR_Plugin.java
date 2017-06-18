@@ -1,40 +1,53 @@
 package dvbprojekt;
 
 import ij.IJ;
+import static ij.IJ.selectWindow;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
+import ij.WindowManager;
 import ij.gui.ImageRoi;
 import ij.gui.Line;
 import ij.gui.ProfilePlot;
 import ij.gui.Roi;
 import ij.gui.Wand;
+import ij.macro.MacroRunner;
+import ij.plugin.ImageCalculator;
 import ij.plugin.PlugIn;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import static ij.IJ.selectWindow;
 
 public class QR_Plugin implements PlugIn {
 
     String path;
     ImagePlus original;
+            ImagePlus bin;
     ImageRoi overlay;
 
-    int minBoxHeight = 70;
+    int binMode = 1; //Otsu oder HSB Methode
+
+    //int minBoxHeight = 70;
+    int minBoxHeight = 30;
     int maxBoxHeight = 350;// 500;
     int minBoxWidth = minBoxHeight / 2;
     int maxBoxWidth = maxBoxHeight;
-    int maxAngle = 20;
+    //int maxAngle = 20;
+    int maxAngle = 30;
 
+    //int scanColDist = 7;
     int scanColDist = 7;
-   
+
     ArrayList<Rectangle> boundingBoxes = new ArrayList<Rectangle>();
-    ArrayList<Polygon> polygons = new ArrayList<Polygon>();
+    ArrayList<Rectangle> blackBoxes = new ArrayList<Rectangle>();
+
 
     @Override
     public void run(String string) {
@@ -46,19 +59,25 @@ public class QR_Plugin implements PlugIn {
         } else {
             //original = IJ.getImage();
 
-    //        original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-           original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-    //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
+              original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
-    //        original = IJ.openImage("/home/tina/Desktop/2.jpg");
+             //       original = IJ.openImage("/home/tina/Desktop/2.jpg");
         }
 
-        ImagePlus bin = new ImagePlus("bin", original.getProcessor());
-        IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
 
-        IJ.run(bin, "8-bit", "");
-        IJ.setAutoThreshold(bin, "Otsu dark");
-        IJ.run(bin, "Convert to Mask", "");
+        if (binMode == 0) {
+            bin = new ImagePlus("bin", original.getProcessor());
+            IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
+
+            IJ.run(bin, "8-bit", "");
+            IJ.setAutoThreshold(bin, "Otsu dark");
+            IJ.run(bin, "Convert to Mask", "");
+
+        } else {
+            bin = new ImagePlus("bin", colorThresholdBinary().getProcessor());
+        }
 
         HashMap<Integer, Line> segmentMap = new HashMap();
         int noSegments = 0;
@@ -89,7 +108,7 @@ public class QR_Plugin implements PlugIn {
 //                  original.setColor(Color.magenta);
 //                  original.getProcessor().drawLine(x, startY, x, startY + currSegmentHeight);
                 }
-            }        
+            }
             //IJ.log(Arrays.toString(p.getProfile()));
         }
 //        IJ.log(segmentMap.toString());
@@ -162,14 +181,14 @@ public class QR_Plugin implements PlugIn {
             for (Map.Entry<Integer, Line> segB : segmentMap.entrySet()) {
                 Line lA = segA.getValue();
                 Line lB = segB.getValue();
-                
+
                 if (segA.getKey() != segB.getKey() && lA.x1 != lB.x1) { //Ungleiches Segment && UNgleiche Spalte?
                     if (lB.x1 >= lA.x1 + minBoxWidth && lB.x1 <= lA.x1 + maxBoxWidth) { //horizontale min & max distance?
-                        
+
                         Line topHline = new Line(lA.x1, lA.y1, lB.x1, lB.y1);
                         Line bottomHline = new Line(lA.x2, lA.y2, lB.x2, lB.y2);
-                        if(topHline.getLength() <= lA.getLength()){
-                            
+                        if (topHline.getLength() <= lA.getLength()) {
+
                             //sind segmente verbundne?
                             int scanlineHOffset = scanColDist / 2;
 
@@ -179,7 +198,7 @@ public class QR_Plugin implements PlugIn {
                                 double[] topProfile = new ProfilePlot(bin).getProfile();
                                 //IJ.log(Arrays.toString(topProfile));
                                 for (int t = 0; t < topProfile.length; t++) {
-                                    if (topProfile[t] == 255 && topConnected==true) {
+                                    if (topProfile[t] == 255 && topConnected == true) {
                                         topConnected = true;
 
                                     } else {
@@ -189,64 +208,48 @@ public class QR_Plugin implements PlugIn {
 //                              original.setColor(Color.magenta);
 //                              original.getProcessor().draw(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
                             }
-                           
+
                             boolean bottomConnected = true;
                             bin.setRoi(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
                             if (bottomHline.getLength() <= lA.getLength()) {//  && bottomHline.getAngle() > (-maxAngle) && bottomHline.getAngle() < maxAngle) {
                                 double[] bottomProfile = new ProfilePlot(bin).getProfile();
 
                                 for (int b = 0; b < bottomProfile.length; b++) {
-                                    if (bottomProfile[b] == 255 && bottomConnected==true) {
+                                    if (bottomProfile[b] == 255 && bottomConnected == true) {
                                         bottomConnected = true;
 
                                     } else {
                                         bottomConnected = false;
-                                    }                                                                         
+                                    }
 //                                  original.setColor(Color.cyan);
 //                                  original.getProcessor().draw(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
                                 }
                             }
-                            
-                            //                                        Wand wand = new Wand(bin.getProcessor());
-//                                        wand.autoOutline(lA.x1, lA.y1, 0.0, 4);
-//                                        int[] Xs = wand.xpoints;
-//                                        int[] Ys = wand.ypoints;
-//                                                            for (int i = 0; i < Xs.length; i++) {
-//                        //  ip.drawString("("+Xs[i]+","+Ys[i]+")", Xs[i]+10, Ys[i]+fontSize);
-//                        original.getProcessor().drawDot(Xs[i], Ys[i]);
-//                    }
-//                                        
-//                                        //suche äßere Box
-//                                        int min_y = getMin(Ys);
-//                                        int max_y = getMax(Ys);
-//                                        int min_x = getMin(Xs);
-//                                        int max_x = getMax(Xs);                                   
-//                                         boundingBoxes.add(new Rectangle((int) min_x, min_y, min_x-max_x, min_y-max_y));
 
                             if (topConnected && bottomConnected) {
                                 double angleTop = topHline.getAngle();
                                 double angleBottom = bottomHline.getAngle();
-                                if ( angleBottom > (-maxAngle) && angleBottom < maxAngle) {
-                                    if (angleTop > (-maxAngle) && angleTop < maxAngle) {                                      
-                   
-                                        int y =(int) lA.y1 - scanlineHOffset;
-                                        if(lB.y1 < y){
-                                            y =lB.y1-scanlineHOffset;
+                                if (angleBottom > (-maxAngle) && angleBottom < maxAngle) {
+                                    if (angleTop > (-maxAngle) && angleTop < maxAngle) {
+
+                                        int y = (int) lA.y1 - scanlineHOffset;
+                                        if (lB.y1 < y) {
+                                            y = lB.y1 - scanlineHOffset;
                                         }
-                                        int height = (int)lA.getLength();
-                                        if(lB.y2 > lA.y2){
-                                            height = (int)lA.getLength() + (lB.y2 - lA.y2);
+                                        int height = (int) lA.getLength();
+                                        if (lB.y2 > lA.y2) {
+                                            height = (int) lA.getLength() + (lB.y2 - lA.y2);
                                         }
-                                        int x= (int) lA.x1 - scanlineVOffset;
-                                        int width= (int) topHline.getLength() + (2*scanlineVOffset);                                        
-                                        
-                                         boundingBoxes.add(
-                                                 new Rectangle(x, y, width, height)
-                                         );
+                                        int x = (int) lA.x1 - scanlineVOffset;
+                                        int width = (int) topHline.getLength() + (2 * scanlineVOffset);
+
+                                        Rectangle bBox =  new Rectangle(x, y, width, height);
+                                        boundingBoxes.add(bBox);
+                                        //blackBoxes.add(innerBlackBox(bBox));
 
                                         original.setColor(Color.magenta);
-                                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 10));
-                                        original.getProcessor().drawString(angleTop+" , "+angleBottom, lA.x1, lB.y1);
+//                                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 10));
+//                                        original.getProcessor().drawString(angleTop + " , " + angleBottom, lA.x1, lB.y1);
 
                                         original.getProcessor().draw(lA);
                                         original.getProcessor().draw(lB);
@@ -258,12 +261,12 @@ public class QR_Plugin implements PlugIn {
                                         original.getProcessor().draw(bottomHline);
                                     }
                                 }
-                            }                          
+                            }
                         }
-        
+
                     }
                 }
-                
+
             }
         }
 
@@ -271,37 +274,100 @@ public class QR_Plugin implements PlugIn {
             original.setColor(Color.yellow);
             original.getProcessor().draw(new Roi(r1));
         }
+        for (Rectangle r1 : blackBoxes) {
+            original.setColor(Color.cyan);
+            original.getProcessor().draw(new Roi(r1));
+        }
 
         bin.show();
         original.show();
     }
+
+//    private Rectangle innerBlackBox(Rectangle outerR){
+//        int minX = Integer.MAX_VALUE;
+//        int minY = Integer.MAX_VALUE;
+//        int maxX = Integer.MIN_VALUE;
+//        int maxY = Integer.MIN_VALUE;
+//        bin.setRoi(outerR);
+//        for (int y = outerR.y; y <= outerR.height; y++) {
+//                for(int x=outerR.x; x<outerR.width;x++){
+//                     IJ.log(bin.getProcessor().get(x, x)+"");
+//                    if((bin.getProcessor()).get(x, y) == 0){
+//                        IJ.log("true");
+//                        if(x<minX){
+//                            minX=x;
+//                        }
+//                        if(y<minY){
+//                            minY=y;
+//                        }
+//                        if(x>maxX){
+//                            maxX=x;
+//                        }
+//                        if(y>maxY){
+//                            maxY=y;
+//                        }
+//                    };
+//                }
+//               
+//        }
+//        return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
+//    }
     
-        private int getMin(int[] array) {
-        int min = array[0];// = Integer.MAX_VALUE;
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == 0) {
-                i++;
-            } else if (array[i] < min) {
-                min = array[i];
+    private ImagePlus colorThresholdBinary() {
+        //original.show();
+        ImagePlus imp = new ImagePlus("copie", original.getProcessor());
+        imp.show();// IJ.getImage();
+        IJ.run(imp, "Enhance Contrast...", "saturated=0.3 equalize");
+
+        //IJ.run(imp, "Color Threshold...", "");
+// Color Thresholder 1.51j
+// Autogenerated macro, single images only!
+        int[] min = new int[3];
+        int[] max = new int[3];
+        String[] filter = new String[3];
+//String a= original.getTitle();
+        IJ.run("HSB Stack");
+        IJ.run("Convert Stack to Images");
+//original.close();
+
+        ImagePlus hue = ij.WindowManager.getImage("Hue");
+        hue.setTitle("0");
+        ImagePlus sat = ij.WindowManager.getImage("Saturation");
+        sat.setTitle("1");
+        ImagePlus bri = ij.WindowManager.getImage("Brightness");
+        bri.setTitle("2");
+
+        min[0] = 0;
+        max[0] = 255;
+        filter[0] = "pass";
+        min[1] = 0;
+        max[1] = 97;
+        filter[1] = "pass";
+        min[2] = 95;
+        max[2] = 255;
+        filter[2] = "pass";
+
+        for (int i = 0; i < 3; i++) {
+            IJ.selectWindow("" + i);
+            IJ.setThreshold(min[i], max[i]);
+            IJ.run("Convert to Mask");
+            if (filter[i] == "stop") {
+                IJ.run("Invert");
             }
         }
-        return min;
+        ImageCalculator ic = new ImageCalculator();
+        ImagePlus impA = ic.run("AND create", hue, sat);
+//impA.show();
+        ImagePlus impB = ic.run("AND create", impA, bri);
+//impB.show();
+
+        hue.close();
+        sat.close();
+        bri.close();
+
+        return impB;
     }
 
-    private int getMax(int[] array) {
-        int max = 0;// = Integer.MIN_VALUE;
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == 0) {
-                i++;
-                //IJ.log(array[i]+" ZERO");
-            }
-            if (array[i] > max) {
-                max = array[i];
-            }
-        }
-        return max;
-    }
-    
     /**
      * Main method for debugging.
      *
