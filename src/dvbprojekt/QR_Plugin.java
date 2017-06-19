@@ -61,8 +61,8 @@ public class QR_Plugin implements PlugIn {
             //original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-              original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            //  original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
              //       original = IJ.openImage("/home/tina/Desktop/2.jpg");
         }
@@ -300,9 +300,7 @@ public class QR_Plugin implements PlugIn {
         
         for (int y = yStart; y <= yEnd; y++) {
                 for(int x= xStart; x<=xEnd;x++){
-                     IJ.log(bin.getProcessor().get(x, y)+"");
                     if(bin.getProcessor().get(x, y) == 0){
-                        IJ.log("true");
                         if(x<minX){
                             minX=x;
                         }
