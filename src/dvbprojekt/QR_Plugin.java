@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import static ij.IJ.selectWindow;
+import ij.process.ImageProcessor;
 
 public class QR_Plugin implements PlugIn {
 
@@ -245,7 +246,9 @@ public class QR_Plugin implements PlugIn {
 
                                         Rectangle bBox =  new Rectangle(x, y, width, height);
                                         boundingBoxes.add(bBox);
-                                        //blackBoxes.add(innerBlackBox(bBox));
+                                        Rectangle innerBox = innerBlackBox(bBox);
+                                        blackBoxes.add(innerBox);
+
 
                                         original.setColor(Color.magenta);
 //                                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 10));
@@ -274,6 +277,7 @@ public class QR_Plugin implements PlugIn {
             original.setColor(Color.yellow);
             original.getProcessor().draw(new Roi(r1));
         }
+        //IJ.log(blackBoxes.toString());
         for (Rectangle r1 : blackBoxes) {
             original.setColor(Color.cyan);
             original.getProcessor().draw(new Roi(r1));
@@ -283,35 +287,40 @@ public class QR_Plugin implements PlugIn {
         original.show();
     }
 
-//    private Rectangle innerBlackBox(Rectangle outerR){
-//        int minX = Integer.MAX_VALUE;
-//        int minY = Integer.MAX_VALUE;
-//        int maxX = Integer.MIN_VALUE;
-//        int maxY = Integer.MIN_VALUE;
-//        bin.setRoi(outerR);
-//        for (int y = outerR.y; y <= outerR.height; y++) {
-//                for(int x=outerR.x; x<outerR.width;x++){
-//                     IJ.log(bin.getProcessor().get(x, x)+"");
-//                    if((bin.getProcessor()).get(x, y) == 0){
-//                        IJ.log("true");
-//                        if(x<minX){
-//                            minX=x;
-//                        }
-//                        if(y<minY){
-//                            minY=y;
-//                        }
-//                        if(x>maxX){
-//                            maxX=x;
-//                        }
-//                        if(y>maxY){
-//                            maxY=y;
-//                        }
-//                    };
-//                }
-//               
-//        }
-//        return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
-//    }
+    private Rectangle innerBlackBox(Rectangle outerR){
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        
+        int yStart = outerR.y +scanColDist;
+        int yEnd = (outerR.y+outerR.height)-scanColDist;
+        int xStart = outerR.x +scanColDist;
+        int xEnd = (outerR.x+outerR.width)-scanColDist;
+        
+        for (int y = yStart; y <= yEnd; y++) {
+                for(int x= xStart; x<=xEnd;x++){
+                     IJ.log(bin.getProcessor().get(x, y)+"");
+                    if(bin.getProcessor().get(x, y) == 0){
+                        IJ.log("true");
+                        if(x<minX){
+                            minX=x;
+                        }
+                        if(y<minY){
+                            minY=y;
+                        }
+                        if(x>maxX){
+                            maxX=x;
+                        }
+                        if(y>maxY){
+                            maxY=y;
+                        }
+                    }
+                }             
+        }
+        
+        return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
+    }
     
     private ImagePlus colorThresholdBinary() {
         //original.show();
