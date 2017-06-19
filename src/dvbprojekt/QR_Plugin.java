@@ -1,38 +1,29 @@
 package dvbprojekt;
 
 import ij.IJ;
-import static ij.IJ.selectWindow;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
-import ij.WindowManager;
 import ij.gui.ImageRoi;
 import ij.gui.Line;
+import ij.gui.Overlay;
 import ij.gui.ProfilePlot;
 import ij.gui.Roi;
-import ij.gui.Wand;
-import ij.macro.MacroRunner;
 import ij.plugin.ImageCalculator;
 import ij.plugin.PlugIn;
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.Polygon;
 import java.awt.Rectangle;
-import java.awt.Window;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import static ij.IJ.selectWindow;
-import ij.process.ImageProcessor;
 
 public class QR_Plugin implements PlugIn {
 
     String path;
     ImagePlus original;
             ImagePlus bin;
-    ImageRoi overlay;
-
+            
     int binMode = 1; //Otsu oder HSB Methode
 
     //int minBoxHeight = 70;
@@ -58,20 +49,19 @@ public class QR_Plugin implements PlugIn {
             path = args;
             original = IJ.openImage(path);
         } else {
-            //original = IJ.getImage();
+            original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-            //  original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
-            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+             // original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
-             //       original = IJ.openImage("/home/tina/Desktop/2.jpg");
+            //        original = IJ.openImage("/home/tina/Desktop/2.jpg");
         }
-
+        
 
         if (binMode == 0) {
             bin = new ImagePlus("bin", original.getProcessor());
-            IJ.run(original, "Enhance Contrast...", "saturated=1.2 equalize");
-
+            IJ.run(bin, "Enhance Contrast...", "saturated=1.2 equalize");
             IJ.run(bin, "8-bit", "");
             IJ.setAutoThreshold(bin, "Otsu dark");
             IJ.run(bin, "Convert to Mask", "");
@@ -283,8 +273,9 @@ public class QR_Plugin implements PlugIn {
             original.getProcessor().draw(new Roi(r1));
         }
 
-        bin.show();
+        bin.show();      
         original.show();
+        original.draw();
     }
 
     private Rectangle innerBlackBox(Rectangle outerR){
@@ -293,10 +284,12 @@ public class QR_Plugin implements PlugIn {
         int maxX = Integer.MIN_VALUE;
         int maxY = Integer.MIN_VALUE;
         
-        int yStart = outerR.y +scanColDist;
-        int yEnd = (outerR.y+outerR.height)-scanColDist;
-        int xStart = outerR.x +scanColDist;
-        int xEnd = (outerR.x+outerR.width)-scanColDist;
+        int padding = (int)(scanColDist*2);
+        
+        int yStart = outerR.y +padding;
+        int yEnd = (outerR.y+outerR.height)-padding;
+        int xStart = outerR.x +padding;
+        int xEnd = (outerR.x+outerR.width)-padding;
         
         for (int y = yStart; y <= yEnd; y++) {
                 for(int x= xStart; x<=xEnd;x++){
