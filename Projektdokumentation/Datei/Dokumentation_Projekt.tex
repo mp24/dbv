@@ -1,0 +1,56 @@
+\documentclass[a4paper,11pt,parskip]{article}
+
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphics}
+\usepackage{amsmath}
+\usepackage{blindtext}
+
+
+\begin{document}
+
+
+
+\title{Projektdokumentation im Modul Digitale Bildverabeitung\\  
+\textbf{Detektion und Erkennung von QR-Verkehrszeichen}}
+\author{Tina Neumann und Minh Pham}
+
+\maketitle
+
+Mit dem vorliegenden ImageJ-PlugIn ist es möglich, QR-Codes in einem RGB Bild zu erkennen.\\
+
+\section{Ansatz}
+Das Erkennen von QR-Codes wird mit einer horizontalen Linescan untersucht. Dabei wird das Bild zunächst binarisiert und im darauffolgenden wird dies mit horizontalen Linescan untersucht.
+
+\section{Verwendung von Parametern}
+\textbf{binMode}: Unterscheidung zwischen 0 und 1. Bei der Auswahl von 0, wählt man die Otsu Methode. Bei der Auswahl von 1 wählt man die HSB Methode\\ \\
+\textbf{Boxgröße}: Hierbei werden die Boxgrößen mit minimalen und maximalen Boxbreite und -höhe in Pixeln bestimmt.\\ \\
+\textbf{scanColDist}: Mit scanDolDist werden die vertikalen ScanLine pixelweise festgesetzt.\\ \\
+\textbf{Bildvariablen}: Dabei werden das Originalbild und das Binärbild gespeichert als ImagePlus. In dem Originalbild werden die gefundenen BoundingBoxen gezeichnet und die Bearbeitung erfolgt im Binärbild.
+
+\section{run-Methode}
+
+\subsection{Öffnen \& Binarisieren des Bildes}
+Im ersten Schritt wird das PlugIn im Makro aufgerufen, danach wird das Bild des übergebenen Pfad geöffnet und hinzu binarisiert. Desweiteren gibt es die Möglichkeit das Bild im ImageJ zu öffnen, wenn das Bild im Makro nicht gefunden wird.
+Es existiert zwei Möglichkeiten für das Binarisieren des Bildes. Mit binmode kann festgelegt werden, ob die Ostu-Threshhold-Methode (Standrd ImageJ) oder die selbstimplementierte colorThresholdBinary verwendet werden.
+
+\subsection{Auffinden von weißen Liniensegmenten}
+Hierbei werden die Segmente im Linescan untersucht. Ziel ist es hierbei weißen Segmente zu finden. Im ersten Schritt erfolgt das Auffinden von Segmenten. Die Spaltenprofile werden untersucht, ob diese mehr weiße Pixelanteile enthalten sind. Diese werden in der Hash-Map hinzugefügt.\\
+
+\subsection{Ausschluss von Segmenten}
+Der folgenden Hash-Map wird iteriert und die Segemente untersucht. Dabei erfolgt das Ausschließen von Segementen, die schwarze Pixelanteile enthalten. Desweiteren werden Linien, die keine Kanten sind und die über dem Standardwert von 350 sind, entfernt. 
+
+\subsection{Vergleich von Segmenten}
+
+
+\section{colorThresholdBinary}
+Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte. Das Bild wird in drei Grauwertbilder zerlegt, jeweils für Farbton, Sättigung und Helligkeit. Diese werden umbenannt, um sie nacheinander mit For-Schleife zu bearbeiten. Innerhalb der For-Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert. Nach dem die Schleife durchlaufen wurde, werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen. Rückgabewert ist das zusammengesetzte Ergebnisbild(Binär)
+\section{innerBlackbox}
+
+%\section{Vorgehensweise}
+%\subsection{erster Ansatz}
+%Der erste Ansatz basiert auf das Auffinden von Linien, dabei %benutzen wir die Funktionen Find Edges und MakeBinary. Das Ziel %ist es, die QR-Codes anhand der Linien entlang der Boxen zu finden.
+
+
+\end{document}
