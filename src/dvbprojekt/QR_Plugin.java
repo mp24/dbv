@@ -20,9 +20,8 @@ import java.util.Map;
 
 public class QR_Plugin implements PlugIn {
 
-    String path;
     ImagePlus original;
-            ImagePlus bin;
+    ImagePlus bin;
             
     int binMode = 1; //Otsu oder HSB Methode
 
@@ -46,15 +45,15 @@ public class QR_Plugin implements PlugIn {
 
         if (IJ.isMacro() && Macro.getOptions() != null && !Macro.getOptions().trim().isEmpty()) {
             String args = Macro.getOptions().trim();
-            path = args;
+            String path = args;
             original = IJ.openImage(path);
         } else {
-            original = IJ.getImage();
+            //original = IJ.getImage();
 
             //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-             // original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
-            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
             //        original = IJ.openImage("/home/tina/Desktop/2.jpg");
         }
         
@@ -70,6 +69,7 @@ public class QR_Plugin implements PlugIn {
             bin = new ImagePlus("bin", colorThresholdBinary().getProcessor());
         }
 
+//Auffinden der Segmente
         HashMap<Integer, Line> segmentMap = new HashMap();
         int noSegments = 0;
         for (int x = 0; x < (bin.getWidth()); x = x + scanColDist) {
@@ -77,13 +77,11 @@ public class QR_Plugin implements PlugIn {
             ProfilePlot p = new ProfilePlot(bin);
             double[] curProfile = p.getProfile();
 
-            //aktuelles Zeilenprofil untersuchen
+            //aktuelles Spaltenprofil untersuchen
             int currSegmentHeight = 0;
             int startY = -1;
             for (int y = 0; y < curProfile.length; y++) {
                 if (curProfile[y] == 255) {
-//                  original.setColor(Color.magenta);
-//                  original.getProcessor().drawDot(x, t);
                     if (currSegmentHeight == 0) {
                         startY = y;
                         noSegments++;
@@ -91,19 +89,14 @@ public class QR_Plugin implements PlugIn {
                     currSegmentHeight++;
                 } else {
                     currSegmentHeight = 0;
-//                  original.setColor(Color.green);
-//                  original.getProcessor().drawDot(x, t);
                 }
                 if (currSegmentHeight > minBoxHeight) {
                     segmentMap.put(noSegments, new Line(x, startY, x, startY + currSegmentHeight));
-//                  original.setColor(Color.magenta);
-//                  original.getProcessor().drawLine(x, startY, x, startY + currSegmentHeight);
                 }
             }
-            //IJ.log(Arrays.toString(p.getProfile()));
         }
-//        IJ.log(segmentMap.toString());
 
+//Ausschluss/ Entfernen von Segmenten
         int scanlineVOffset = scanColDist + 1;//(int) (scanColDist * 1.8);
         for (Iterator<Map.Entry<Integer, Line>> it = segmentMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<Integer, Line> entry = it.next();
@@ -111,8 +104,6 @@ public class QR_Plugin implements PlugIn {
 
             boolean overMaxHeight = lineSeg.y2 > (lineSeg.y1) + maxBoxHeight;
             if (overMaxHeight) { //entferne zu hohe linien  
-//              original.setColor(Color.darkGray);
-//              original.getProcessor().draw(lineSeg);
                 it.remove();
             } else { //entferne linien die keine Kante sind
                 boolean leftEdge = true;
@@ -123,12 +114,8 @@ public class QR_Plugin implements PlugIn {
                     if (b > leftProfile.length * 0.1 && b < leftProfile.length * 0.9 && leftEdge) {
                         if (leftProfile[b] == 0) {
                             leftEdge = true;
-//                          original.setColor(Color.magenta);
-//                          original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
                         } else {
                             leftEdge = false;
-//                          original.setColor(Color.lightGray);
-//                          original.getProcessor().drawDot(leftVline.x1, leftVline.y1 + b);
                         }
                     }
                 }
@@ -141,33 +128,23 @@ public class QR_Plugin implements PlugIn {
                     if (b > rightProfile.length * 0.1 && b < rightProfile.length * 0.9 && rightEdge) {
                         if (rightProfile[b] == 0) {
                             rightEdge = true;
-//                          original.setColor(Color.cyan);
-//                          original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
                         } else {
                             rightEdge = false;
-//                          original.setColor(Color.lightGray);
-//                          original.getProcessor().drawDot(rightVline.x1, rightVline.y1 + b);
                         }
                     }
                 }
 
                 if (!leftEdge) {
                     if (!rightEdge) {
-//                      original.setColor(Color.gray);
-//                      original.getProcessor().draw(lineSeg);
                         it.remove();
                     }
                 } else if (rightEdge) {
-//                  original.setColor(Color.gray);
-//                  original.getProcessor().draw(lineSeg);
                     it.remove();
                 }
             }
-
         }
-        //IJ.log(segmentMap.toString());
 
-        //key = segmentNumber
+//Vergleich von Segmenten
         for (Map.Entry<Integer, Line> segA : segmentMap.entrySet()) {
             for (Map.Entry<Integer, Line> segB : segmentMap.entrySet()) {
                 Line lA = segA.getValue();
@@ -187,7 +164,6 @@ public class QR_Plugin implements PlugIn {
                             bin.setRoi(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
                             if (topHline.getLength() <= lA.getLength()) {// && topHline.getAngle() > (-maxAngle) && topHline.getAngle() < maxAngle) {
                                 double[] topProfile = new ProfilePlot(bin).getProfile();
-                                //IJ.log(Arrays.toString(topProfile));
                                 for (int t = 0; t < topProfile.length; t++) {
                                     if (topProfile[t] == 255 && topConnected == true) {
                                         topConnected = true;
@@ -196,8 +172,6 @@ public class QR_Plugin implements PlugIn {
                                         topConnected = false;
                                     }
                                 }
-//                              original.setColor(Color.magenta);
-//                              original.getProcessor().draw(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
                             }
 
                             boolean bottomConnected = true;
@@ -212,8 +186,6 @@ public class QR_Plugin implements PlugIn {
                                     } else {
                                         bottomConnected = false;
                                     }
-//                                  original.setColor(Color.cyan);
-//                                  original.getProcessor().draw(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
                                 }
                             }
 
@@ -263,11 +235,11 @@ public class QR_Plugin implements PlugIn {
             }
         }
 
+//Zeichen der Bounding Boxen
         for (Rectangle r1 : boundingBoxes) {
             original.setColor(Color.yellow);
             original.getProcessor().draw(new Roi(r1));
         }
-        //IJ.log(blackBoxes.toString());
         for (Rectangle r1 : blackBoxes) {
             original.setColor(Color.cyan);
             original.getProcessor().draw(new Roi(r1));
@@ -277,6 +249,7 @@ public class QR_Plugin implements PlugIn {
         original.show();
         original.draw();
     }
+    
 
     private Rectangle innerBlackBox(Rectangle outerR){
         int minX = Integer.MAX_VALUE;
@@ -313,22 +286,28 @@ public class QR_Plugin implements PlugIn {
         return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
     }
     
+    
+/*
+    colorThresholdBinary()
+    Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. 
+    Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte.
+    Das Bild wird in drei Grauwertbilder zerlegt, je eins für Farbton, Sättigung und Helligkeit. 
+    Diese werden umbenannt um sie per for Schleife nacheinander zu bearbeiten. 
+    Innerhalb der For Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert.
+    Nach dem die Schleife durchlaufen wurde werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen.
+    Rückgabewert ist das Zusammengesetzte Ergebnisbild(Binär)
+    
+    */
     private ImagePlus colorThresholdBinary() {
-        //original.show();
         ImagePlus imp = new ImagePlus("copie", original.getProcessor());
         imp.show();// IJ.getImage();
         IJ.run(imp, "Enhance Contrast...", "saturated=0.3 equalize");
 
-        //IJ.run(imp, "Color Threshold...", "");
-// Color Thresholder 1.51j
-// Autogenerated macro, single images only!
         int[] min = new int[3];
         int[] max = new int[3];
         String[] filter = new String[3];
-//String a= original.getTitle();
         IJ.run("HSB Stack");
         IJ.run("Convert Stack to Images");
-//original.close();
 
         ImagePlus hue = ij.WindowManager.getImage("Hue");
         hue.setTitle("0");
@@ -357,9 +336,7 @@ public class QR_Plugin implements PlugIn {
         }
         ImageCalculator ic = new ImageCalculator();
         ImagePlus impA = ic.run("AND create", hue, sat);
-//impA.show();
         ImagePlus impB = ic.run("AND create", impA, bri);
-//impB.show();
 
         hue.close();
         sat.close();
