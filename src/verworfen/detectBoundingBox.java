@@ -1,4 +1,4 @@
-package dvbprojekt;
+package verworfen;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -35,7 +35,8 @@ public class detectBoundingBox implements PlugIn {
     @Override
     public void run(String string) {
         //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
-        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+        //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+        original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
         //original = IJ.openImage("/home/tina/Desktop/2.jpg");
         imp = new ImagePlus("Bin", original.getProcessor());
         imp.getType();
@@ -89,7 +90,7 @@ public class detectBoundingBox implements PlugIn {
             if (ip.getPixel(xRand, yRand) != tagColor) {
                 if (ip.getPixel(xRand, yRand) == targetColor) {
                     wand.autoOutline(xRand, yRand, 0.0, 4);//, 0.0 ,1);
-                    //IJ.log(Arrays.toString(wand.xpoints));
+       //             IJ.log(Arrays.toString(wand.xpoints));
                     //IJ.log(Arrays.toString(wand.ypoints));
 
                     int[] Xs = wand.xpoints;
