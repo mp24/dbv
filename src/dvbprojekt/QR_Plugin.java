@@ -69,7 +69,7 @@ public class QR_Plugin implements PlugIn {
             bin = new ImagePlus("bin", colorThresholdBinary().getProcessor());
         }
 
-//Auffinden der Segmente
+//Aufinden der Segmente
         HashMap<Integer, Line> segmentMap = new HashMap();
         int noSegments = 0;
         for (int x = 0; x < (bin.getWidth()); x = x + scanColDist) {
@@ -145,6 +145,16 @@ public class QR_Plugin implements PlugIn {
         }
 
 //Vergleich von Segmenten
+/*In zwei verschachteltet For schleifen werden die Linien der segmentMap miteinander Verglichen. 
+Dabfür wird zunächt geprüft ob die Segment Nummern und damit die Linien sich unterscheiden und ob die Linien in unterschiedliche Spalten (x Position) aufweisen. 
+Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den begrenzungen von minBoxWidth und maxBoxWidth entspricht.
+Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes(rot) und Unteres(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
+Dannach wird untersucht ob das Linienprofil der oberen  und unteren Linie ausschließlich Weiße Pixel enthält.
+Sind Die vertikalen Linien Verbunden wird noch der Wikel von Oberer und Unterer überprüft.
+Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird Ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
+Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe NAME hinzugefügt. Dannach werden die Boxen beider Ĺisten in gelb und cyan ins originalbild gezeichnet.
+
+*/
         for (Map.Entry<Integer, Line> segA : segmentMap.entrySet()) {
             for (Map.Entry<Integer, Line> segB : segmentMap.entrySet()) {
                 Line lA = segA.getValue();
