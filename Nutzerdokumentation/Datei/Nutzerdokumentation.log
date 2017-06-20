@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.6.2)  20 JUN 2017 17:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.6.2)  20 JUN 2017 17:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -576,7 +576,7 @@ Here is how much of TeX's memory you used:
  6669 multiletter control sequences out of 15000+600000
  12754 words of font info for 34 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 38i,6n,23p,245b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 38i,6n,23p,309b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2016/texmf-dist/fonts/enc/dvip
 s/cm-super/cm-super-t1.enc}</usr/local/texlive/2016/texmf-dist/fonts/type1/publ
 ic/cm-super/sfbx1095.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public
@@ -585,7 +585,7 @@ m-super/sfbx1728.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-
 super/sfrm1095.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-su
 per/sfrm1200.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-supe
 r/sfrm1728.pfb>
-Output written on Nutzerdokumentation.pdf (1 page, 94730 bytes).
+Output written on Nutzerdokumentation.pdf (1 page, 95813 bytes).
 PDF statistics:
  33 PDF objects out of 1000 (max. 8388607)
  23 compressed objects within 1 object stream

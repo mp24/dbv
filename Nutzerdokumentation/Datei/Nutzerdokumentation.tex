@@ -19,7 +19,7 @@
 
 \maketitle
 
-Mit dem vorliegenden ImageJ-PlugIn ist es möglich, QR-Codes im Bild zu erkennen und diese mit jeweils ihren Verkehrzeichen zuordnen zu können.\\
+Mit dem vorliegenden ImageJ-PlugIn ist es möglich, QR-Codes in einem RGB Bild zu erkennen.\\
 
 \section{Programmfunktion}
 
@@ -29,15 +29,7 @@ Mit dem vorliegenden ImageJ-PlugIn ist es möglich, QR-Codes im Bild zu erkennen
 chen-Typ\\ \\
 \textbf{Aktueller Stand}: Anzeige Boxen als Overlay(Boxennummer), weitere Bearbeitung folgen: Erkennung von QR-Verkehrzeichen
 
-\newpage
-\title{Projektdokumentation im Modul Digitale Bildverabeitung\\
-\textbf{Detektion und Erkennung von QR-Verkehrszeichen}
+\section{Nutzung}
+Es gibt zwei Möglichkeiten, das PlugIn zu starten. Zum einen wird das PlugIn über dem Makro gestartet. In dem Makro befindet sich der übergebene Pfad, in dem das Bild liegt. Zum anderen kann man im ImageJ ein Bild auswählen und das PlugIn aufrufen, welche erstellt wurde.
 
-\maketitle
-\section{Vorgehensweise}
-\subsection{erster Ansatz}
-Der erste Ansatz basiert auf das Auffinden von Linien, dabei benutzen wir die Funktionen Find Edges und MakeBinary. Das Ziel ist es, die QR-Codes anhand der Linien entlang der Boxen zu finden.
-
-\subsection{zweiter Ansatz}
-Der zweite Ansatz basiert auf das Suchen von QR-Codes in Abhängikeit von Verkehrsschildern. Dabei suchen wir zunächst nach roten und blauen Regionen im Bild, welche die Verkehrsschilder auffinden soll. Anhand dieser wird der darunter liegende QR-Code detektiert.
 \end{document}
