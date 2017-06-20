@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.6.2)  20 JUN 2017 17:57
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.6.2)  20 JUN 2017 18:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -551,17 +551,17 @@ G,.JBIG2,.JB2,.eps]
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Underfull \hbox (badness 10000) in paragraph at lines 22--23
-
- []
-
-
 Underfull \hbox (badness 10000) in paragraph at lines 26--31
 
  []
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 26--31
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 36--37
 
  []
 
@@ -570,25 +570,26 @@ Underfull \hbox (badness 10000) in paragraph at lines 26--31
 {/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 (./Nutzerdokumentation.aux) ) 
 Here is how much of TeX's memory you used:
- 3179 strings out of 493014
- 40524 string characters out of 6133352
+ 3181 strings out of 493014
+ 40546 string characters out of 6133352
  116819 words of memory out of 5000000
- 6669 multiletter control sequences out of 15000+600000
- 12754 words of font info for 34 fonts, out of 8000000 for 9000
+ 6670 multiletter control sequences out of 15000+600000
+ 13530 words of font info for 35 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  38i,6n,23p,309b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2016/texmf-dist/fonts/enc/dvip
 s/cm-super/cm-super-t1.enc}</usr/local/texlive/2016/texmf-dist/fonts/type1/publ
 ic/cm-super/sfbx1095.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public
-/cm-super/sfbx1440.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/c
-m-super/sfbx1728.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-
-super/sfrm1095.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-su
-per/sfrm1200.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-supe
-r/sfrm1728.pfb>
-Output written on Nutzerdokumentation.pdf (1 page, 95813 bytes).
+/cm-super/sfbx1200.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/c
+m-super/sfbx1440.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-
+super/sfbx1728.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-su
+per/sfrm1095.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-supe
+r/sfrm1200.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/cm-super/
+sfrm1728.pfb>
+Output written on Nutzerdokumentation.pdf (1 page, 110099 bytes).
 PDF statistics:
- 33 PDF objects out of 1000 (max. 8388607)
- 23 compressed objects within 1 object stream
+ 37 PDF objects out of 1000 (max. 8388607)
+ 26 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

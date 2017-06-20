@@ -1,0 +1,388 @@
+package dvbprojekt;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.gui.ImageRoi;
+import ij.gui.Line;
+import ij.gui.Overlay;
+import ij.gui.ProfilePlot;
+import ij.gui.Roi;
+import ij.plugin.ImageCalculator;
+import ij.plugin.PlugIn;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+public class QR_Plugin implements PlugIn {
+
+    ImagePlus original;
+    ImagePlus bin;
+            
+    int binMode = 1; //Otsu oder HSB Methode
+
+    //int minBoxHeight = 70;
+    int minBoxHeight = 30;
+    int maxBoxHeight = 350;// 500;
+    int minBoxWidth = minBoxHeight / 2;
+    int maxBoxWidth = maxBoxHeight;
+    //int maxAngle = 20;
+    int maxAngle = 30;
+
+    //int scanColDist = 7;
+    int scanColDist = 7;
+
+    ArrayList<Rectangle> boundingBoxes = new ArrayList<Rectangle>();
+    ArrayList<Rectangle> blackBoxes = new ArrayList<Rectangle>();
+
+
+    @Override
+    public void run(String string) {
+
+        if (IJ.isMacro() && Macro.getOptions() != null && !Macro.getOptions().trim().isEmpty()) {
+            String args = Macro.getOptions().trim();
+            String path = args;
+            original = IJ.openImage(path);
+        } else {
+            //original = IJ.getImage();
+
+            //original = IJ.openImage("/home/tina/Desktop/IMG_20170530_102445.jpg");
+             //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:47:20.png");
+            //original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:48:32.png");
+            original = IJ.openImage("/home/tina/Desktop/Screenshot from 2017-06-13 14:43:01.png");
+            //        original = IJ.openImage("/home/tina/Desktop/2.jpg");
+        }
+        
+
+        if (binMode == 0) {
+            bin = new ImagePlus("bin", original.getProcessor());
+            IJ.run(bin, "Enhance Contrast...", "saturated=1.2 equalize");
+            IJ.run(bin, "8-bit", "");
+            IJ.setAutoThreshold(bin, "Otsu dark");
+            IJ.run(bin, "Convert to Mask", "");
+
+        } else {
+            bin = new ImagePlus("bin", colorThresholdBinary().getProcessor());
+        }
+
+//Aufinden der Segmente
+        HashMap<Integer, Line> segmentMap = new HashMap();
+        int noSegments = 0;
+        for (int x = 0; x < (bin.getWidth()); x = x + scanColDist) {
+            bin.setRoi(new Line(x, 0, x, bin.getHeight()));
+            ProfilePlot p = new ProfilePlot(bin);
+            double[] curProfile = p.getProfile();
+
+            //aktuelles Spaltenprofil untersuchen
+            int currSegmentHeight = 0;
+            int startY = -1;
+            for (int y = 0; y < curProfile.length; y++) {
+                if (curProfile[y] == 255) {
+                    if (currSegmentHeight == 0) {
+                        startY = y;
+                        noSegments++;
+                    }
+                    currSegmentHeight++;
+                } else {
+                    currSegmentHeight = 0;
+                }
+                if (currSegmentHeight > minBoxHeight) {
+                    segmentMap.put(noSegments, new Line(x, startY, x, startY + currSegmentHeight));
+                }
+            }
+        }
+
+//Ausschluss/ Entfernen von Segmenten
+        int scanlineVOffset = scanColDist + 1;//(int) (scanColDist * 1.8);
+        for (Iterator<Map.Entry<Integer, Line>> it = segmentMap.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<Integer, Line> entry = it.next();
+            Line lineSeg = entry.getValue();
+
+            boolean overMaxHeight = lineSeg.y2 > (lineSeg.y1) + maxBoxHeight;
+            if (overMaxHeight) { //entferne zu hohe linien  
+                it.remove();
+            } else { //entferne linien die keine Kante sind
+                boolean leftEdge = true;
+                Line leftVline = new Line(lineSeg.x1 + scanlineVOffset, lineSeg.y1 + scanlineVOffset, lineSeg.x2 + scanlineVOffset, lineSeg.y2 - scanlineVOffset);
+                bin.setRoi(leftVline);
+                double[] leftProfile = new ProfilePlot(bin).getProfile();
+                for (int b = 0; b < leftProfile.length; b++) {
+                    if (b > leftProfile.length * 0.1 && b < leftProfile.length * 0.9 && leftEdge) {
+                        if (leftProfile[b] == 0) {
+                            leftEdge = true;
+                        } else {
+                            leftEdge = false;
+                        }
+                    }
+                }
+
+                boolean rightEdge = true;
+                Line rightVline = new Line(lineSeg.x1 - scanlineVOffset, lineSeg.y1 + scanlineVOffset, lineSeg.x2 - scanlineVOffset, lineSeg.y2 - scanlineVOffset);
+                bin.setRoi(rightVline);
+                double[] rightProfile = new ProfilePlot(bin).getProfile();
+                for (int b = 0; b < rightProfile.length; b++) {
+                    if (b > rightProfile.length * 0.1 && b < rightProfile.length * 0.9 && rightEdge) {
+                        if (rightProfile[b] == 0) {
+                            rightEdge = true;
+                        } else {
+                            rightEdge = false;
+                        }
+                    }
+                }
+
+                if (!leftEdge) {
+                    if (!rightEdge) {
+                        it.remove();
+                    }
+                } else if (rightEdge) {
+                    it.remove();
+                }
+            }
+        }
+
+//Vergleich von Segmenten
+/*In zwei verschachteltet For schleifen werden die Linien der segmentMap miteinander Verglichen. 
+Dabfür wird zunächt geprüft ob die Segment Nummern und damit die Linien sich unterscheiden und ob die Linien in unterschiedliche Spalten (x Position) aufweisen. 
+Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den begrenzungen von minBoxWidth und maxBoxWidth entspricht.
+Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes(rot) und Unteres(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
+Dannach wird untersucht ob das Linienprofil der oberen  und unteren Linie ausschließlich Weiße Pixel enthält.
+Sind Die vertikalen Linien Verbunden wird noch der Wikel von Oberer und Unterer überprüft.
+Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird Ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
+Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe NAME hinzugefügt. Dannach werden die Boxen beider Ĺisten in gelb und cyan ins originalbild gezeichnet.
+
+*/
+        for (Map.Entry<Integer, Line> segA : segmentMap.entrySet()) {
+            for (Map.Entry<Integer, Line> segB : segmentMap.entrySet()) {
+                Line lA = segA.getValue();
+                Line lB = segB.getValue();
+
+                if (segA.getKey() != segB.getKey() && lA.x1 != lB.x1) { //Ungleiches Segment && UNgleiche Spalte?
+                    if (lB.x1 >= lA.x1 + minBoxWidth && lB.x1 <= lA.x1 + maxBoxWidth) { //horizontale min & max distance?
+
+                        Line topHline = new Line(lA.x1, lA.y1, lB.x1, lB.y1);
+                        Line bottomHline = new Line(lA.x2, lA.y2, lB.x2, lB.y2);
+                        if (topHline.getLength() <= lA.getLength()) {
+
+                            //sind segmente verbundne?
+                            int scanlineHOffset = scanColDist / 2;
+
+                            boolean topConnected = true;
+                            bin.setRoi(new Line(lA.x1, lA.y1 + scanlineHOffset, lB.x1, lB.y1 + scanlineHOffset));
+                            if (topHline.getLength() <= lA.getLength()) {// && topHline.getAngle() > (-maxAngle) && topHline.getAngle() < maxAngle) {
+                                double[] topProfile = new ProfilePlot(bin).getProfile();
+                                for (int t = 0; t < topProfile.length; t++) {
+                                    if (topProfile[t] == 255 && topConnected == true) {
+                                        topConnected = true;
+
+                                    } else {
+                                        topConnected = false;
+                                    }
+                                }
+                            }
+
+                            boolean bottomConnected = true;
+                            bin.setRoi(new Line(lA.x2, lA.y2 - scanlineHOffset, lB.x2, lB.y2 - scanlineHOffset));
+                            if (bottomHline.getLength() <= lA.getLength()) {//  && bottomHline.getAngle() > (-maxAngle) && bottomHline.getAngle() < maxAngle) {
+                                double[] bottomProfile = new ProfilePlot(bin).getProfile();
+
+                                for (int b = 0; b < bottomProfile.length; b++) {
+                                    if (bottomProfile[b] == 255 && bottomConnected == true) {
+                                        bottomConnected = true;
+
+                                    } else {
+                                        bottomConnected = false;
+                                    }
+                                }
+                            }
+
+                            if (topConnected && bottomConnected) {
+                                double angleTop = topHline.getAngle();
+                                double angleBottom = bottomHline.getAngle();
+                                if (angleBottom > (-maxAngle) && angleBottom < maxAngle) {
+                                    if (angleTop > (-maxAngle) && angleTop < maxAngle) {
+
+                                        int y = (int) lA.y1 - scanlineHOffset;
+                                        if (lB.y1 < y) {
+                                            y = lB.y1 - scanlineHOffset;
+                                        }
+                                        int height = (int) lA.getLength();
+                                        if (lB.y2 > lA.y2) {
+                                            height = (int) lA.getLength() + (lB.y2 - lA.y2);
+                                        }
+                                        int x = (int) lA.x1 - scanlineVOffset;
+                                        int width = (int) topHline.getLength() + (2 * scanlineVOffset);
+
+                                        Rectangle bBox =  new Rectangle(x, y, width, height);
+                                        boundingBoxes.add(bBox);
+                                        Rectangle innerBox = innerBlackBox(bBox);
+                                        blackBoxes.add(innerBox);
+
+
+                                        original.setColor(Color.magenta);
+//                                        original.getProcessor().setFont(new Font("SansSerif", Font.PLAIN, 10));
+//                                        original.getProcessor().drawString(angleTop + " , " + angleBottom, lA.x1, lB.y1);
+
+                                        original.getProcessor().draw(lA);
+                                        original.getProcessor().draw(lB);
+
+                                        original.setColor(Color.red);
+                                        original.getProcessor().draw(topHline);
+
+                                        original.setColor(Color.blue);
+                                        original.getProcessor().draw(bottomHline);
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+        }
+
+//Zeichen der Bounding Boxen
+        for (Rectangle r1 : boundingBoxes) {
+            original.setColor(Color.yellow);
+            original.getProcessor().draw(new Roi(r1));
+        }
+        for (Rectangle r1 : blackBoxes) {
+            original.setColor(Color.cyan);
+            original.getProcessor().draw(new Roi(r1));
+        }
+
+        bin.show();      
+        original.show();
+        original.draw();
+    }
+    
+/*
+    innerBlackBox()
+    Eingabe: awt.Rectangle das die äußeren Grenzen des Weißen Rahmens festlegt.
+    Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrat (das die Kodierten informationen enthält). 
+    In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht.
+    Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.
+    Innerhalb der Schleifen werden die äußeren grenzen der schwarzen Box ermittelt. 
+    Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
+    
+    */
+    private Rectangle innerBlackBox(Rectangle outerR){
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        
+        int padding = (int)(scanColDist*2);
+        
+        int yStart = outerR.y +padding;
+        int yEnd = (outerR.y+outerR.height)-padding;
+        int xStart = outerR.x +padding;
+        int xEnd = (outerR.x+outerR.width)-padding;
+        
+        for (int y = yStart; y <= yEnd; y++) {
+                for(int x= xStart; x<=xEnd;x++){
+                    if(bin.getProcessor().get(x, y) == 0){
+                        if(x<minX){
+                            minX=x;
+                        }
+                        if(y<minY){
+                            minY=y;
+                        }
+                        if(x>maxX){
+                            maxX=x;
+                        }
+                        if(y>maxY){
+                            maxY=y;
+                        }
+                    }
+                }             
+        }
+        
+        return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
+    }
+    
+    
+/*
+    colorThresholdBinary()
+    Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. 
+    Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte.
+    Das Bild wird in drei Grauwertbilder zerlegt, je eins für Farbton, Sättigung und Helligkeit. 
+    Diese werden umbenannt um sie per for Schleife nacheinander zu bearbeiten. 
+    Innerhalb der For Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert.
+    Nach dem die Schleife durchlaufen wurde werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen.
+    Rückgabewert ist das Zusammengesetzte Ergebnisbild(Binär)
+    
+    */
+    private ImagePlus colorThresholdBinary() {
+        ImagePlus imp = new ImagePlus("copie", original.getProcessor());
+        imp.show();// IJ.getImage();
+        IJ.run(imp, "Enhance Contrast...", "saturated=0.3 equalize");
+
+        int[] min = new int[3];
+        int[] max = new int[3];
+        String[] filter = new String[3];
+        IJ.run("HSB Stack");
+        IJ.run("Convert Stack to Images");
+
+        ImagePlus hue = ij.WindowManager.getImage("Hue");
+        hue.setTitle("0");
+        ImagePlus sat = ij.WindowManager.getImage("Saturation");
+        sat.setTitle("1");
+        ImagePlus bri = ij.WindowManager.getImage("Brightness");
+        bri.setTitle("2");
+
+        min[0] = 0;
+        max[0] = 255;
+        filter[0] = "pass";
+        min[1] = 0;
+        max[1] = 97;
+        filter[1] = "pass";
+        min[2] = 95;
+        max[2] = 255;
+        filter[2] = "pass";
+
+        for (int i = 0; i < 3; i++) {
+            IJ.selectWindow("" + i);
+            IJ.setThreshold(min[i], max[i]);
+            IJ.run("Convert to Mask");
+            if (filter[i] == "stop") {
+                IJ.run("Invert");
+            }
+        }
+        ImageCalculator ic = new ImageCalculator();
+        ImagePlus impA = ic.run("AND create", hue, sat);
+        ImagePlus impB = ic.run("AND create", impA, bri);
+
+        hue.close();
+        sat.close();
+        bri.close();
+
+        return impB;
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have lA method that starts ImageJ,
+     * loads an image and calls the plugin, e.g. after setting breakpoints.
+     *
+     * @param args unused
+     */
+    public static void main(String[] args) {
+        // set the plugins.dir property to make the plugin appear in the Plugins menu
+        Class<?> clazz = QR_Plugin.class;
+        String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
+        String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
+        System.setProperty("plugins.dir", pluginsDir);
+
+        // start ImageJ
+        new ImageJ();
+
+        IJ.runPlugIn(clazz.getName(), "");
+    }
+
+}
