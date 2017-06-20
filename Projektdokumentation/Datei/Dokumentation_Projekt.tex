@@ -46,7 +46,10 @@ Der folgenden Hash-Map wird iteriert und die Segemente untersucht. Dabei erfolgt
 
 \section{colorThresholdBinary}
 Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte. Das Bild wird in drei Grauwertbilder zerlegt, jeweils für Farbton, Sättigung und Helligkeit. Diese werden umbenannt, um sie nacheinander mit For-Schleife zu bearbeiten. Innerhalb der For-Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert. Nach dem die Schleife durchlaufen wurde, werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen. Rückgabewert ist das zusammengesetzte Ergebnisbild(Binär)
+
 \section{innerBlackbox}
+Eingabe: awt.Rectangle das die äußeren Grenzen des weißen Rahmens festlegt.
+Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrate (das die Kodierten informationen enthält). In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht. Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.Innerhalb der Schleifen werden die äußeren Grenzen der schwarzen Box ermittelt. Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
 
 %\section{Vorgehensweise}
 %\subsection{erster Ansatz}
