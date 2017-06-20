@@ -43,13 +43,12 @@ Der folgenden Hash-Map wird iteriert und die Segemente untersucht. Dabei erfolgt
 
 \subsection{Vergleich von Segmenten}
 In zwei verschachteltet For schleifen werden die Linien der segmentMap miteinander Verglichen. 
-Dabfür wird zunächt geprüft ob die Segment Nummern und damit die Linien sich unterscheiden und ob die Linien in unterschiedliche Spalten (x Position) aufweisen. 
-Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den begrenzungen von minBoxWidth und maxBoxWidth entspricht.
-Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes(rot) und Unteres(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
+Dafür wird zunächt geprüft ob sich die Segment Nummern (keys der Hashmap) und damit die Linien unterscheiden und ob die Linien unterschiedliche Spalten (x Position) aufweisen. 
+Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den Begrenzungen von minBoxWidth und maxBoxWidth entspricht.
+Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes-(rot) und unteres-(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
 Dannach wird untersucht ob das Linienprofil der oberen  und unteren Linie ausschließlich Weiße Pixel enthält.
-Sind Die vertikalen Linien Verbunden wird noch der Wikel von Oberer und Unterer überprüft.
-Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird Ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
-Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe NAME hinzugefügt. Dannach werden die Boxen beider Ĺisten in gelb und cyan ins originalbild gezeichnet.
+Sind Die vertikalen Linien Verbunden wird noch der Wikel von oberer und unterer überprüft. Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
+Anschließend wird die innere schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe blackBoxes hinzugefügt. Dannach werden die Boxen beider Ĺisten in das Originalbild gezeichnet. Die äßeren Bounding Boxen werden in gelb, die inneren schwarzen in cyan gekennzeichnet.
 
 \section{colorThresholdBinary}
 Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte. Das Bild wird in drei Grauwertbilder zerlegt, jeweils für Farbton, Sättigung und Helligkeit. Diese werden umbenannt, um sie nacheinander mit For-Schleife zu bearbeiten. Innerhalb der For-Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert. Nach dem die Schleife durchlaufen wurde, werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen. Rückgabewert ist das zusammengesetzte Ergebnisbild(Binär)
