@@ -250,7 +250,16 @@ public class QR_Plugin implements PlugIn {
         original.draw();
     }
     
-
+/*
+    innerBlackBox()
+    Eingabe: awt.Rectangle das die äußeren Grenzen des Weißen Rahmens festlegt.
+    Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrat (das die Kodierten informationen enthält). 
+    In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht.
+    Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.
+    Innerhalb der Schleifen werden die äußeren grenzen der schwarzen Box ermittelt. 
+    Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
+    
+    */
     private Rectangle innerBlackBox(Rectangle outerR){
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
