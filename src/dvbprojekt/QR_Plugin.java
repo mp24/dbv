@@ -4,9 +4,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
-import ij.gui.ImageRoi;
 import ij.gui.Line;
-import ij.gui.Overlay;
 import ij.gui.ProfilePlot;
 import ij.gui.Roi;
 import ij.plugin.ImageCalculator;
@@ -38,6 +36,7 @@ public class QR_Plugin implements PlugIn {
 
     ArrayList<Rectangle> boundingBoxes = new ArrayList<Rectangle>();
     ArrayList<Rectangle> blackBoxes = new ArrayList<Rectangle>();
+    ArrayList<String> code = new ArrayList<String>();
 
 
     @Override
@@ -145,16 +144,6 @@ public class QR_Plugin implements PlugIn {
         }
 
 //Vergleich von Segmenten
-/*In zwei verschachteltet For schleifen werden die Linien der segmentMap miteinander Verglichen. 
-Dabfür wird zunächt geprüft ob die Segment Nummern und damit die Linien sich unterscheiden und ob die Linien in unterschiedliche Spalten (x Position) aufweisen. 
-Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den begrenzungen von minBoxWidth und maxBoxWidth entspricht.
-Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes(rot) und Unteres(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
-Dannach wird untersucht ob das Linienprofil der oberen  und unteren Linie ausschließlich Weiße Pixel enthält.
-Sind Die vertikalen Linien Verbunden wird noch der Wikel von Oberer und Unterer überprüft.
-Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird Ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
-Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe NAME hinzugefügt. Dannach werden die Boxen beider Ĺisten in gelb und cyan ins originalbild gezeichnet.
-
-*/
         for (Map.Entry<Integer, Line> segA : segmentMap.entrySet()) {
             for (Map.Entry<Integer, Line> segB : segmentMap.entrySet()) {
                 Line lA = segA.getValue();
@@ -260,16 +249,12 @@ Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesuc
         original.draw();
     }
     
-/*
-    innerBlackBox()
-    Eingabe: awt.Rectangle das die äußeren Grenzen des Weißen Rahmens festlegt.
-    Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrat (das die Kodierten informationen enthält). 
-    In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht.
-    Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.
-    Innerhalb der Schleifen werden die äußeren grenzen der schwarzen Box ermittelt. 
-    Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
     
-    */
+    private String encode(Rectangle r){
+    
+    return "";
+    }
+    
     private Rectangle innerBlackBox(Rectangle outerR){
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
@@ -305,18 +290,6 @@ Anschließend wird die innere Schwarze box mit der Methode innerBlackBox() gesuc
         return  new Rectangle(minX, minY, maxX-minX, maxY-minY); 
     }
     
-    
-/*
-    colorThresholdBinary()
-    Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. 
-    Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte.
-    Das Bild wird in drei Grauwertbilder zerlegt, je eins für Farbton, Sättigung und Helligkeit. 
-    Diese werden umbenannt um sie per for Schleife nacheinander zu bearbeiten. 
-    Innerhalb der For Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert.
-    Nach dem die Schleife durchlaufen wurde werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen.
-    Rückgabewert ist das Zusammengesetzte Ergebnisbild(Binär)
-    
-    */
     private ImagePlus colorThresholdBinary() {
         ImagePlus imp = new ImagePlus("copie", original.getProcessor());
         imp.show();// IJ.getImage();
