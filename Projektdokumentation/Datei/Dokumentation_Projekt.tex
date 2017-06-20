@@ -57,9 +57,7 @@ Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Array
 Eingabe: awt.Rectangle das die äußeren Grenzen des weißen Rahmens festlegt.
 Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrate (das die Kodierten informationen enthält). In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht. Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.Innerhalb der Schleifen werden die äußeren Grenzen der schwarzen Box ermittelt. Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
 
-%\section{Vorgehensweise}
-%\subsection{erster Ansatz}
-%Der erste Ansatz basiert auf das Auffinden von Linien, dabei %benutzen wir die Funktionen Find Edges und MakeBinary. Das Ziel %ist es, die QR-Codes anhand der Linien entlang der Boxen zu finden.
-
+\section{verworfener Ansatz}
+Der erste Ansatz basiert auf das Auffinden von Linien, dabei benutzen wir die Funktionen Find Edges und MakeBinary. Mit dem Wand(Zauberstab) Pixel ausgewählt und überprüft ob sie der Vordergrundfarbe entsprechen, und den festgelegten Größenbeschränkungen entspricht. Aufgrund derverwendung von zufallszahlen und FloodFiller zur Markierung war dieser Ansatz jedoch nicht zuverlässig und performant genug.
 
 \end{document}
