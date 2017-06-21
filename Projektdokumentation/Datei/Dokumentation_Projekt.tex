@@ -21,44 +21,44 @@
 Mit dem vorliegenden ImageJ-PlugIn ist es möglich, QR-Codes in einem RGB Bild zu erkennen.\\
 
 \section{Ansatz}
-Das Erkennen von QR-Codes wird mit einer horizontalen Linescan untersucht. Dabei wird das Bild zunächst binarisiert und im darauffolgenden wird dies mit horizontalen Linescan untersucht.
+Das Erkennen von QR-Codes erfolgt mit einem horizontalen Linescan. Dabei wird das Bild zunächst binarisiert und im darauffolgenden mit einem horizontalen Linescan untersucht.
 
 \section{Verwendung von Parametern}
-\textbf{binMode}: Unterscheidung zwischen 0 und 1. Bei der Auswahl von 0, wählt man die Otsu Methode. Bei der Auswahl von 1 wählt man die HSB Methode\\ \\
+\textbf{binMode}: Unterscheidung zwischen 0 und 1. Bei der Auswahl von 0, wählt man die Otsu-Methode. Bei der Auswahl von 1 wählt man die HSB Methode.\\ \\
 \textbf{Boxgröße}: Hierbei werden die Boxgrößen mit minimalen und maximalen Boxbreite und -höhe in Pixeln bestimmt.\\ \\
 \textbf{scanColDist}: Mit scanDolDist werden die vertikalen ScanLine pixelweise festgesetzt.\\ \\
-\textbf{Bildvariablen}: Dabei werden das Originalbild und das Binärbild gespeichert als ImagePlus. In dem Originalbild werden die gefundenen BoundingBoxen gezeichnet und die Bearbeitung erfolgt im Binärbild.
+\textbf{Bildvariablen}: Dabei werden das Originalbild und das Binärbild jeweils als  ImagePlus gespeichert. In dem Originalbild werden die gefundenen BoundingBoxen gezeichnet und die Bearbeitung erfolgt im Binärbild.
 
 \section{run-Methode}
 
 \subsection{Öffnen \& Binarisieren des Bildes}
-Im ersten Schritt wird das PlugIn im Makro aufgerufen, danach wird das Bild des übergebenen Pfad geöffnet und hinzu binarisiert. Desweiteren gibt es die Möglichkeit das Bild im ImageJ zu öffnen, wenn das Bild im Makro nicht gefunden wird.
-Es existiert zwei Möglichkeiten für das Binarisieren des Bildes. Mit binmode kann festgelegt werden, ob die Ostu-Threshhold-Methode (Standrd ImageJ) oder die selbstimplementierte colorThresholdBinary verwendet werden.
+Im ersten Schritt wird das PlugIn im Makro aufgerufen, danach wird das Bild des übergebenen Pfad geöffnet und hinzu binarisiert. Desweiteren gibt es die Möglichkeit das Bild im ImageJ zu öffnen, falls das Bild im Makro nicht gefunden wird.\\
+Es existiert zwei Möglichkeiten für das Binarisieren des Bildes. Mit binmode kann festgelegt werden, ob die Ostu-Threshhold-Methode (Standard ImageJ) oder die selbstimplementierte colorThresholdBinary verwendet werden.
 
 \subsection{Auffinden von weißen Liniensegmenten}
-Hierbei werden die Segmente im Linescan untersucht. Ziel ist es hierbei weißen Segmente zu finden. Im ersten Schritt erfolgt das Auffinden von Segmenten. Die Spaltenprofile werden untersucht, ob diese mehr weiße Pixelanteile enthalten sind. Diese werden in der Hash-Map hinzugefügt.\\
+Hierbei werden die Segmente im Linescan untersucht. Ziel ist es hierbei weißen Segmente zu finden. Im ersten Schritt erfolgt das Auffinden von Segmenten. Die Spaltenprofile werden untersucht, ob diese mehr weiße Pixelanteile enthalten sind. Diese werden in der Hash-Map hinzugefügt.
 
 \subsection{Ausschluss von Segmenten}
 Der folgenden Hash-Map wird iteriert und die Segemente untersucht. Dabei erfolgt das Ausschließen von Segementen, die schwarze Pixelanteile enthalten. Desweiteren werden Linien, die keine Kanten sind und die über dem Standardwert von 350 sind, entfernt. 
 
 \subsection{Vergleich von Segmenten}
-In zwei verschachteltet For schleifen werden die Linien der segmentMap miteinander Verglichen. 
-Dafür wird zunächt geprüft ob sich die Segment Nummern (keys der Hashmap) und damit die Linien unterscheiden und ob die Linien unterschiedliche Spalten (x Position) aufweisen. 
-Als nächstes wir überprüft ob der horizontale(x) Abstand beider Linien den Begrenzungen von minBoxWidth und maxBoxWidth entspricht.
-Trifft all dies zu werden zwei horizontale Linien erzeugt die oberes-(rot) und unteres-(blau) Ende der beiden vertikalen Linien(magenta) verbindet. 
-Dannach wird untersucht ob das Linienprofil der oberen  und unteren Linie ausschließlich Weiße Pixel enthält.
-Sind Die vertikalen Linien Verbunden wird noch der Wikel von oberer und unterer überprüft. Ist er innerhalb der von maxAngle Vorggegebenen Grenze wird ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt
-Anschließend wird die innere schwarze box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe blackBoxes hinzugefügt. Dannach werden die Boxen beider Ĺisten in das Originalbild gezeichnet. Die äßeren Bounding Boxen werden in gelb, die inneren schwarzen in cyan gekennzeichnet.
+In zwei verschachtelten For Schleifen werden die Linien der segmentMap miteinander verglichen. 
+Dafür wird zunächt geprüft, ob sich die Segment Nummern (keys der Hashmap) und die Linien unterscheiden. Desweiteren wird untersucht, ob die Linien unterschiedliche Spalten (x Position) aufweisen. 
+Als nächstes wird überprüft, ob der horizontale (x) Abstand der beiden Linien, den Begrenzungen von minBoxWidth und maxBoxWidth entspricht.
+Trifft all dies zu, werden zwei horizontale Linien erzeugt, die oberes-(rot) und unteres-(blau) Ende der beiden vertikalen Linien (magenta) verbindet. 
+Danach wird betrachtet, ob das Linienprofil der oberen und unteren Linie ausschließlich weiße Pixel enthält.
+Sind die vertikalen Linien verbunden, wird noch der Winkel von oberer und unterer Linie überprüft. Ist er innerhalb der von maxAngle vorgegebenen Grenze, wird ein Rectangle erzeugt und zur ArrayList boundingBoxes hinzufügt.
+Anschließend wird die innere schwarze Box mit der Methode innerBlackBox() gesucht und zu einer weiteren ArrayListe blackBoxes hinzugefügt. Danach werden die Boxen beider Ĺisten in das Originalbild gezeichnet. Die äußeren Bounding Boxen werden in gelb, die inneren schwarzen in cyan gekennzeichnet.
 
 \section{colorThresholdBinary}
-Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte. Das Bild wird in drei Grauwertbilder zerlegt, jeweils für Farbton, Sättigung und Helligkeit. Diese werden umbenannt, um sie nacheinander mit For-Schleife zu bearbeiten. Innerhalb der For-Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert. Nach dem die Schleife durchlaufen wurde, werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen. Rückgabewert ist das zusammengesetzte Ergebnisbild(Binär)
+Das Original RGB Bild wird zunächst kopiert und der Kontrast erhöht. Die Arrays min, max und filter enthalten Einstellungen für die akzeptierten Grenzwerte. Das Bild wird in drei Grauwertbilder zerlegt, jeweils für Farbton, Sättigung und Helligkeit. Diese werden umbenannt, um sie nacheinander mit For Schleife zu bearbeiten. Innerhalb der For Schleife werden die Grauwertbilder mit minimalem und maximalem Grenzwert binarisiert. Nach dem die Schleife durchlaufen wurde, werden die drei binären Ergebnisbilder mit der ADD Funktion des ImageCalculators zussamengeführt und geschlossen. Rückgabewert ist das zusammengesetzte Ergebnisbild (Binär).
 
 \section{innerBlackbox}
-Eingabe: awt.Rectangle das die äußeren Grenzen des weißen Rahmens festlegt.
-Die Methode sucht innerhalb des äußeren Weißen Rahmens das schwarze Quadrate (das die Kodierten informationen enthält). In einer geschachtelten For Schleife,wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht. Dabei wird das padding verwendet um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern.Innerhalb der Schleifen werden die äußeren Grenzen der schwarzen Box ermittelt. Am Ende der Methode wird ein neues Rectangle mit den gefundenen grenzen Konstruiert und zurückgegeben.
+Mit der Eingabe: awt.Rectangle werden die äußeren Grenzen des weißen Rahmens festlegt.
+Die Methode sucht innerhalb des äußeren weißen Rahmens das schwarze Quadrat, das die Kodierten Informationen enthält. In einer geschachtelten For Schleife, wird mit einem gewissen Abstand (int padding) zum äußeren Rand nach schwarzen Pixeln gesucht. Dabei wird das padding verwendet, um die Erkennung der inneren Box auch bei perspektivisch verzerrten Bildern zu verbessern. Innerhalb der Schleifen werden die äußeren Grenzen der schwarzen Box ermittelt. Am Ende der Methode wird ein neues Rectangle mit den gefundenen Grenzen konstruiert und zurückgegeben.
 
 
 \section{verworfener Ansatz}
-Der erste Ansatz basiert auf das Auffinden von Linien, dabei benutzen wir die Funktionen Find Edges und MakeBinary. Mit dem Wand(Zauberstab) Pixel ausgewählt und überprüft ob sie der Vordergrundfarbe entsprechen, und den festgelegten Größenbeschränkungen entspricht. Aufgrund derverwendung von zufallszahlen und FloodFiller zur Markierung war dieser Ansatz jedoch nicht zuverlässig und performant genug.
+Der erste Ansatz basiert auf das Auffinden von Linien, dabei benutzen wir die Funktionen Find Edges und MakeBinary. Mit dem Wand (Zauberstab) werden die Pixel ausgewählt und überprüft, ob sie der Vordergrundfarbe entsprechen, und den festgelegten Größenbeschränkungen entspricht. Aufgrund der Verwendung von Zufallszahlen und FloodFiller, welches zur Markierung diente, war dieser Ansatz jedoch nicht zuverlässig und performant genug.
 
 \end{document}
